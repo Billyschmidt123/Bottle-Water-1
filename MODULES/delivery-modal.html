@@ -1,0 +1,26 @@
+<div class="modal">
+    <div class="modal-header">Delivery Details</div>
+
+    <div class="modal-body">
+        <label>Route ID</label>
+        <input type="text" id="deliveryRoute" style="width:100%; margin-bottom:10px;">
+
+        <label>Driver</label>
+        <input type="text" id="deliveryDriver" style="width:100%; margin-bottom:10px;">
+
+        <label>Notes</label>
+        <textarea id="deliveryNotes" style="width:100%; height:80px;"></textarea>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn-success" onclick="confirmDelivery()">Confirm</button>
+        <button class="btn-danger" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+function confirmDelivery() {
+    console.log("Delivery confirmed");
+    closeModal();
+}
+</script>

@@ -1,0 +1,24 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery fee,Special order item ,Quantity,,,,Active
+23e2bdae,None,None,TD Bank - Aramark,1040 102nd Avenue, Dawson Creek, BC V1G 4H4,,,,PO# 1228701-0000S,,,,,true
+85dc00b7,None,None,Bluewave Energy,2801 92nd Avenue, Dawson Creek, BC V1G 0G2,,Rob 250-219-1057,,Want to be on the route again,,,,,true
+65b302a1,None,None,CN Rail,4301 116th Avenue, Dawson Creek, BC V1G 4H3,,,,MUST GET STAMP/SIGNATURE,,,,,true
+7df1dfe8,None,None,Ovintiv - Tower Plant,LSD 03-07-081-17-W6, BC,,,,Fill out amounts - ask if you need help,,,,,,true
+1f309513,None,None,Ovintiv - Saturn Plant,LSD 15-27-079-17-W6, BC,,,,,,,,,,true
+f91eb3b6,None,None,Ovintiv - Water Hub 2,LSD 16-36-078-17-W6, BC,,,,Coffee Supplies Sheet,,,,,,true
+652d9df0,None,None,Veresen Compressor Site,LSD 09-27-079-17-W6, BC,,250-843-3018,,,,,,,,true
+0e31bf0d,None,None,Torra Lake (A5-G),LSD A5-G/93-P-09, BC,,,,,,,,,,true
+6510ffab,None,None,Torra Lake (D19-H),LSD D19-H/93-P-09, BC,,250-793-0112,,,,,,,,true
+0b9a1997,None,None,Sinclair Site,LSD 15-31-078-13-W6, BC,,,,,,,,,,true
+4d046c5b,None,None,South Central Liquid Hub,LSD C-014-G/93-P-09, BC,,,,243 Road Dawn 9. The Water Hub @ 26,,,,,,true
+ded898be,None,None,Sunrise Plant,LSD 01-34-04-26-078-17-W6, BC,,,,,,,,,,true
+9d35b956,None,None,Berry Road Site,9-15-77-15 Berry Road, Dawson Creek, BC,,250-782-8501,,,,,,,true
+4c277d6c,None,None,Dawson Creek Hospital,11100 13 Street, Dawson Creek, BC V1G 3W8,,250-785-0314,,PO and contact person needed,,,,,true
+42224c4a,None,None,Heritage North,8912 109th Street, Fort St John, BC V1J 6K2,,,,,,,,,true
+5702ed3f,None,None,Custom Cell FSJ,Unit 1360, 9600 93 Avenue, Fort St John, BC V1J 5Z2,,250-785-4115,,,,,,true
+625fbd34,None,None,Custom Cell DC,1025 102 Avenue, Dawson Creek, BC V1G 2B9,,250-219-6765,,,,,,,true
+9966257f,None,None,Pat's Auto,1400 102 Avenue, Dawson Creek, BC V1G 2C9,,250-784-1500,,,,,,,true
+52f6a189,None,None,Walmart DC (PROMO),600 Highway 2, Dawson Creek, BC V1G 4P7,,250-219-0128,,,,,,,true
+20904335,None,None,Walmart FSJ (PROMO),9007 96A Street, Fort St John, AB V1J 7B5,,250-261-5564,,,,,,,true
+3e17efa2,None,None,Bandstra Transportation,1505 97 Avenue, Dawson Creek, BC V1G 1M5,,250-782-0477,,,,,,,true
+26776683,None,None,Apex Distribution,1045 102 Avenue, Dawson Creek, BC V1G 2B9,,,,,,,,,true
+8d67d7cb,None,None,Intercom,1424 102 Avenue, Dawson Creek, BC V1G 2C5,,,,420-115 Avenue,,,,,true

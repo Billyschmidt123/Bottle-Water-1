@@ -1,0 +1,25 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery Fee,,,,,Active
+ff08fd98,week 3,Tuesday,Big Country CJXX,202, 9817 101 Avenue, Grande Prairie, AB T8V 0X6,Select standard fee,,,Ken.norman@jpbg.ca,,,true
+d838c90f,week 3,Tuesday,MJ/Crane Medical Clinic,Unit 104, 10055 120 Avenue, Grande Prairie, AB T8V 8H8,,,,,,,true
+aecc499d,week 3,Tuesday,Apex Security,9915A 100 Avenue, Grande Prairie, AB T8V 0V1,,,,,,,,true
+630a6a79,week 3,Tuesday,Apex Security (Service Bldg),10702 100 Street, Grande Prairie, AB T8V 2M7,,,,,,,,true
+0aaa89da,week 3,Tuesday,The Bell Store,Unit 114B, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,,,,,true
+2a85d9f8,week 3,Tuesday,Ken Sargent,12308 100 Street, Grande Prairie, AB T8V 4H7,Select standard fee,,,pbradley@sargentgmc.com,,,,true
+daf3ac1b,week 3,Tuesday,Chatters Salon,Unit 184, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,,,,,true
+13cab395,week 4,Wednesday,T.S. Bookkeeping,Unit 223, 9728 101 Avenue, Grande Prairie, AB T8V 3B9,,,,,,,true
+ccf144a7,,,Trojan Safety Services AB LTD,13515-97 Street Grande Prairie, AB T8X 1S8,Select standard fee,,,payables@trojansafety.com,RUSH ORDER - 3/20/2026 | Email: payables@trojansafety.com,66408,,,true
+fbf3cd45,,,Dobko & Wheaton,10022-102 Ave Grande Prairie, AB T8V 0Z7,,,,receptionist@dwlaw.ca,[Route: week 3 > 3 Tues.csv] [Day: Friday],,,,true
+4ff75415,,,Century 21 GP Realty,10828-100 Street Grande Prairie, AB T8V 2M8,,,,cheryl.schindel@century21gp.com,[Route: week 3 > 3 Tues.csv] [Day: Friday],,,,true
+99191316,,,westland Insurance,9917-116 Ave,,780-532-7800,,invoices@westlandinsurance.ca,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+e9eb14bb,,,Prairie Mall Dental,216, 11801-100 Street Grande Prairie AB T8V 3Y2,,780-538-2992,,paymyinvoices@dentalcorp.ca,[Route: week 3 > 3 Tues] [Day: Monday],,,,true
+a1656805,,,UFA Farm Store,15602-101 Street Grande Prairie AB T8V 0P2,,780-532-1281,,apinvoice@ufa.com,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+a3d2a086,,,Source Energy,9706-132 Ave Grande Prairie AB T8V 5N7,,780-832-2631,,inv-clog@sourceenergyservices.com,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+6af6e213,,,Sean Sargent Toyota,10625-117 Ave Grande Prairie, AB T8V 7N6,Select standard fee,,,accounting@seansargenttoyota.com,[Route: week 3 > 3 Tues.csv] [Day: Monday],,,,true
+fa645791,,,GRPP Courthouse,10260-99 Street Grande Prairie AB T8V 2H4,,780-538-5360,,grpp@just.gov.ab.ca,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+9d541f9a,,,FYI Doctors,12111-99 Street Grande Prairie AB T8V 6X9,,1-587-771-3212,,,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+4fc977aa,,,Chandos Construction,10726-106 Ave Grande Prairie AB T8V 4C4,,,,accountspayable@chandos.com,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+4505a6db,,,NWP College,10726-106 Ave Grande Prairie AB T8V 4C4,,780-539-2933,,ap@nwpolytech.ca,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+5c8ccfe1,,,Shearwall,10211-133 Ave Grande Prairie AB T8X 0V5,,780-459-4777,,iva@shearwall.ca,[Route: week 3 > 3 Tues] [Day: Monday],,,,,true
+7aa1d9e6,,,Adorn Aesthetics,10006 101 Ave Grande Prairie AB T8V 2P9,Select standard fee,,,info@adornaesthetics.ca,RUSH ORDER - 3/23/2026 | Email: info@adornaesthetics.ca,57617,,,,true
+5a407c12,,,Kelt Exploration,10055-120 Ave Unit 108,Grande Prairie, AB T8V 8H8,Select standard fee,,,mbull@keltexploration.com,RUSH ORDER - 3/24/2026 | Email: mbull@keltexploration.com,46126,,true
+ec1a9bf5,,,Modern Niagara ,903-3rd Street Beaverlodge AB T0H 0C0,$17.00,1-587-372-4967 Matt Turon,,MTuron@modernniagara.com,[Day: Wednesday],PO# 40-11-0019MT,,,,true

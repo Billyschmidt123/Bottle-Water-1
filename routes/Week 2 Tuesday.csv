@@ -1,0 +1,20 @@
+CustomerID,Week,Day,Company,Address,Location,Notes,Phone,Email,Delivery Fee ,,,,,Active
+8ab4f9dc,week 2,Tuesday,Company,Address,,,,,,,,,,true
+edbdcb3e,week 3,Wednesday,Rentco Tool Shed,10016 108 Avenue, Grande Prairie, AB T8V 1R5,,Closet Room,,,,,,true
+e6379ed7,week 4,Thursday,MJ/Crane Medical Clinic,Unit 104, 10055 120 Avenue, Grande Prairie, AB T8V 8H8,,Costco Program is NO MORE,,,,,true
+e8e596f7,week 5,Friday,Apex Security,9915A 100 Avenue, Grande Prairie, AB T8V 0V1,,,,,,,,true
+3dfa4eeb,week 6,Saturday,Apex Security (Service Bldg),10702 100 Street, Grande Prairie, AB T8V 2M7,,5 Bottles,,,,,,true
+43fcc837,week 7,Sunday,The Bell Store,Unit 114B, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,780-533-7829,,,,true
+ec575b60,week 8,Monday,Ken Sargent,12308 100 Street, Grande Prairie, AB T8V 4H7,,,,,,,,true
+e853da73,week 9,Tuesday,Chatters Salon,Unit 184, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,780-532-1159,,,,true
+a654142c,week 10,Wednesday,T.S. Bookkeeping Services,Unit 223, 9728 101 Avenue, Grande Prairie, AB T8V 3B9,,3 Bottles,,,,,true
+faee1664,week 11,Thursday,Overland West,9020 92 Street, Grande Prairie, AB T8V 4A5,,New and Used,,,,,,true
+4636d8b8,week 12,Friday,Prairie Mall Dental,Unit 216, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,,,,,true
+e3801a8e,week 13,Saturday,UFA Farm Store,15602 101 Street, Grande Prairie, AB T8V 0P2,,4 Bottles,,,,,,true
+80ce1ad9,week 14,Sunday,Sure Hire,Unit 112, 8505 Resource Road, Grande Prairie, AB T8V 0C8,,,780-532-1281,,,,true
+d15ecadb,week 15,Monday,Canada West Land,10211 133 Avenue, Grande Prairie, AB T8V 5N4,,,,,,,,true
+42ccaa18,week 16,Tuesday,Shearwall Triforce Inc,8805 Resource Road, Bldg 115, Grande Prairie, AB T8V 0C8,,,780-296-3493,,,,true
+0c0f184d,week 17,Wednesday,Progressive Physio,10605 Westside Drive, Grande Prairie, AB T8V 8E6,,Randy Site Supervisor,780-899-6420,,,,,true
+73ab404e,,,,,,3 bottles,,,,,,,,true
+6361884a,,,,, ,,,,,,,,,true
+b6616ead,,,UFA Farm Store,15602-101 Street Grande Prairie AB T8V 0P2,,780-532-1281,,apinvoice@ufa.com,[Route: Week 2 > 2 Tuesday] [Day: Monday],,,,,true

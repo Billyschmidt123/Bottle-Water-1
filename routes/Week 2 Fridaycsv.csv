@@ -1,0 +1,22 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery Fee ,,,,Active
+dfce5766,week 2,Friday,Company,Address,,,Loading Trailer, Westend Receiving Upstairs...,,,,,true
+de120a85,week 2,Friday,West Fraser Mills (NorBord Inc.),2025 Range Road 53, Grovedale, AB T0H 1X0,,,,,,,true
+e2833d38,week 2,Friday,Wapiti Gravel Suppliers,4201 93 Street, Grande Prairie, AB T8W 5A9,Select standard fee,780-882-7176,,ap@npaltd.ca,,,true
+1a9b3835,week 2,Friday,Jayelle's,70114 Highway 666, Grovedale, AB T0H 1X0,Select standard fee,,,,,,true
+6380d1d0,week 2,Friday,Hillbilly Hauling,70115 Highway 666, Grovedale, AB T0H 1X0,Select standard fee,,,accounting@hillbillyhaulin.ca,,,true
+e1d09536,week 2,Friday,Casino at Evergreen Park,55051 Township Rd 710, Grande Prairie, AB T8W 5A6,Select standard fee,,PO NEEDED,jennifer@evergreenpark.ca,,,true
+21a5c33f,week 2,Friday,Dunes on 17 Fire Station,8111 Resources Road, County of Grande Prairie, AB T8W 3A7,Select standard fee,,PO NEEDED,ap@countygp.ab.ca,,,true
+45b9ba34,week 2,Friday,Roska PTS,3601 98 Street, Grande Prairie, AB T8W 5A8,Select standard fee,,6 Bottles,payables@roskadbo.com,,,true
+949ed05f,week 2,Friday,Roska 666 (Blue & White Bldg),70120 Highway 666, Grovedale, AB T0H 1X0,Select standard fee,,12 Bottles,payables@roskadbo.com,,,true
+3b44fcff,week 2,Friday,International Paper (Admin Bldg),53024A Resources Road, Grande Prairie, AB T8V 6V4,Select standard fee,,Lunch room,APinvoices@ipaper.com,,,true
+48c88870,week 2,Friday,Dunvegan Gardens (GP) Ltd,7110 340 Hwy 40, Grande Prairie, AB T8W 5A4,Select standard fee,,,accounting@dunvegangp.ca,,,true
+42609a06,week 2,Friday,Chinook Scaffolding,Hwy 40 South (International Paper Site), Grande Prairie, AB T8V 6V4,,,11 Bottles weekly,,,,true
+c1beb339,week 2,Friday,Titan Energy,711038A HWY 40, County of Grande Prairie, AB T8W 5B6,Select standard fee,,10 Bottles,AP@titanenergyservices.com,,,true
+5844ebf7,week 2,Friday,2127722 Alberta Ltd (Chris London),6 64031 TWP RD 703A, Grovedale, AB T0H 1X0,Select standard fee,,,CLONDONCSI@GMAIL.COM,,,true
+0d5eee11,week 2,Friday,Nitehawk Ski Hill,6352 TWP RD 702A, Grovedale, AB T0H 1X0,Select standard fee,,,accounting@gonitehawk.com,,,true
+206caab4,week 2,Friday,GP Golf & Country,711040 Resources Road, Grande Prairie, AB T8V 3A7,Select standard fee,,,admin@gpgolf.ca,,,true
+3b05e63a,week 2,Friday,PGI Processing,LSD 07-35-067-07 W6M, Grovedale, AB T0H 1X0,,,,,,,true
+2682da8f,,,CSV Midstream,LSD 06-18-066-04 W5M, Resthaven, AB T0H 1R0,Select standard fee,,,,,,true
+a5ac325e,,,,,,,,,,,,,true
+edd6ab6f,,,Pembina,PGI Musreau gas Plant M2,Travel time,,,Rush Driver,RUSH ORDER - 3/16/2026,28643,,,true
+0379060e,,,Via Seperators,53024A Resources Rd, Grande Prairie ,AB T8V 6V4,Select standard fee,,,rcaron@viaseparations.com,[Day: Wednesday],,true

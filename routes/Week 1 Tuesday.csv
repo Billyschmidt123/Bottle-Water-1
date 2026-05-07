@@ -1,0 +1,34 @@
+CustomerID,Week,Day,Company,Address,Location,Notes,Phone,Email,Delivery fee ,,,,,Active
+2ee48f72,week1,Tue,Big Country CJXX,202, 9817 101 Avenue, Grande Prairie, AB T8V 0X6,$17.00,,,ken.norman@jpbg.ca,,,true
+fa2b4af9,week1,Tue,Speedy Collision,12704 100 Street, Grande Prairie, AB T8V 4H3,Select standard fee,Under Stairwell,,payables.windsorford@gmail.com,,,,true
+74059ec2,week1,Tue,Sean Sargent,10625 117 Avenue, Grande Prairie, AB T8V 7N6,$17.00,,6B 780 -539-6200,accounting@sargenttoyota.com,,,,true
+554db6dc,week1,Tue,Dobko & Wheaton,10022 102 Avenue, Grande Prairie, AB T8V 0Z7,$17.00,,Mall 7802-833-7020,receptionist@dwlaw.ca,,,,true
+753dc059,week1,Tue,The Bell Store,Unit 114B, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,780-832-2361,,,,true
+cd3a88ad,week1,Tue,Source Energy,9706 132 Avenue, Grande Prairie, AB T8V 4C1,$17.00,,,inv-clog@sourceenergyservices.com,,,,true
+3613a837,week1,Tue,Prairie Mall Dental,Unit 216, 11801 100 Street, Grande Prairie, AB T8V 3Y2,$17.00,,,paymyinvoices@dentalcorp.ca,,,true
+c4681809,week1,Tue,Edward Jones,Unit 101, 10055 120 Avenue, Grande Prairie, AB T8V 8H8,$17.00,,,trevor.willis@edwardjones.com,,,true
+2e4e839a,week1,Tue,Ken Sargent,12308 100 Street, Grande Prairie, AB T8V 4H7,$17.00,,780-532-1281,pbradley@sargentgmc.com,,,,true
+e1f9d811,week1,Tue,Integra Tire,10022 124 Avenue, Grande Prairie, AB T8V 5L7,$17.00,,,karen@integratiregp.ca,,,,true
+bcb66013,week1,Tue,Custom Cellular (Mall),Unit 116, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,,,,,true
+190a679a,week1,Tue,Canna Cabana,Unit 370, 11801 100 Street, Grande Prairie, AB T8V 3Y2,,,,,,,true
+ece6de4b,week1,Tue,FYI Doctors,12111 99 Street, Grande Prairie, AB T8V 6X9,,,,,,,,true
+cbbc33b5,week1,Tue,NW Polytechnic IT DEPT,10726 106 Avenue, Grande Prairie, AB T8V 4C4,$17.00,,,ap@nwpolytech.ca,,,,true
+cf7c97e1,week1,Tue,Francophonie Plurielle,Unit 202, 9932 111 Avenue, Grande Prairie, AB T8V 7L3,$17.00,,,olivia.f@frap.ca,,,true
+1eb4a341,week1,Tue,Custom Cellular (100 St),10304 100 Street, Grande Prairie, AB T8V 2M1,$17.00,,,Kaylene@custom.ab.ca,,,,true
+4ef3249d,week1,Tue,Cenovus Gas Plant,LSD 13-22-70-11-W6 (Off Hwy 722) Elmworth,2 hours Travel Time,,,Erin.Pearson@cenovus.com,,,,,,true
+43a3864b,week1,Tue,Fosters Agri-World,1100 11 Street West Beaverlodge,,,780-715-8487,,,,,,,true
+8d134da3,week1,Tue,Advantage Energy,Km 18, Boone Road (Off Hwy 722)  Elmworth/Boone,,,,,,,,,true
+f8979560,week1,Tue,Go Time Energy,11250 97 Street Wembley,,,,,,,,,,true
+fe4c717c,week1,Tue,All Peace Realty,913 2 Avenue Beaverlodge,,,,,,,,,,true
+c7ee0cb2,week1,Tue,AltaGas (Huallan Rd),Huallan Road (RR 92) & Hwy 667 Huallan,,,,,,,,,,true
+c413550e,week1,Tue,EPFC AltaGas Project,15201 91 Street (Regional Office) Grande Prairie,,,,,,,,,,true
+0e1ef0fa,week1,Tue,CNRL - Pipestone,13-NW-36-70-08-6,,,,,Select standard fee,,,,,true
+5498bf43,week1,Tue,Top Dog Mechanical,302 3rd Avenue West Beaverlodge,,,,,,,,,,true
+707a0339,,,Ledcor Highways,210 4th Street West  Beaverlodge,,,,,,,,,,true
+69e0a8d7,,,UFA Farm Store,15602-101 Street Grande Prairie AB T8V 0P2,,780-532-1281,,apinvoice@ufa.com,[Route: Week 1 > 1 Tuesday] [Day: Monday],,,,,true
+42936613,,,GRPP Courthouse,10260-99 Street Grande Prairie AB T8V 2H4,Select standard fee,780-538-5360,,grpp@just.gov.ab.ca,[Route: Week 1 > 1 Tuesday] [Day: Monday],,,,,true
+b64e62c9,,,Chandos Construction,10726-106 Ave Grande Prairie AB T8V 4C4,Select standard fee,,,accountspayable@chandos.com,[Route: Week 1 > 1 Tuesday] [Day: Monday],,,,,true
+26fbedf6,,,NWP College HR DEPT,10726-106 Ave Grande Prairie AB T8V 4C4,Select standard fee,780-539-2933,,ap@nwpolytech.ca,[Route: Week 1 > 1 Tuesday] [Day: Monday],,,,,true
+7471e94e,,,Shearwall,10211-133 Ave Grande Prairie AB T8X 0V5,Select standard fee,780-459-4777,,iva@shearwall.ca,[Route: Week 1 > 1 Tuesday] [Day: Monday],,,,,true
+32922db3,,,Watch Me Grow,102. 10525-100 ave Grande Prairie,AB T8V 0V8,$17.00,,,Vanessa@watchmegrow.ab.ca,RUSH ORDER - 4/7/2026 | Email: Vanessa@watchmegrow.ab.ca,10216,,,true
+5d8ed6cf,,,Modern Niagara ,903-3rd Street Beaverlodge AB T0H 0C0,$17.00,1-587-372-4967 Matt Turon,,MTuron@modernniagara.com,[Day: Wednesday],PO# 40-11-0019MT,,,,true

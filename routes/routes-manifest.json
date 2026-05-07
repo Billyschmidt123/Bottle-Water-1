@@ -1,0 +1,145 @@
+{
+  "updatedAt": "2026-05-02T17:23:52.365Z",
+  "routes": [
+    {
+      "id": "Dawson Creek - Dawson Creek",
+      "name": "Dawson Creek - Dawson Creek",
+      "file": "Dawson Creek - Dawson Creek.csv"
+    },
+    {
+      "id": "Dawson creek new ",
+      "name": "Dawson creek new ",
+      "file": "Dawson creek new .csv"
+    },
+    {
+      "id": "Fox Creek - Valleyview ",
+      "name": "Fox Creek - Valleyview ",
+      "file": "Fox Creek - Valleyview .csv"
+    },
+    {
+      "id": "North",
+      "name": "North",
+      "file": "North.csv"
+    },
+    {
+      "id": "Salt",
+      "name": "Salt",
+      "file": "Salt.csv"
+    },
+    {
+      "id": "Valleyview",
+      "name": "Valleyview",
+      "file": "Valleyview.csv"
+    },
+    {
+      "id": "Week ",
+      "name": "Week ",
+      "file": "Week .csv"
+    },
+    {
+      "id": "Week 1 Friday",
+      "name": "Week 1 Friday",
+      "file": "Week 1 Friday.csv"
+    },
+    {
+      "id": "Week 1 Monday",
+      "name": "Week 1 Monday",
+      "file": "Week 1 Monday.csv"
+    },
+    {
+      "id": "Week 1 Thursday",
+      "name": "Week 1 Thursday",
+      "file": "Week 1 Thursday.csv"
+    },
+    {
+      "id": "Week 1 Tuesday",
+      "name": "Week 1 Tuesday",
+      "file": "Week 1 Tuesday.csv"
+    },
+    {
+      "id": "Week 1 Wednessday",
+      "name": "Week 1 Wednessday",
+      "file": "Week 1 Wednessday.csv"
+    },
+    {
+      "id": "Week 2 Fridaycsv",
+      "name": "Week 2 Fridaycsv",
+      "file": "Week 2 Fridaycsv.csv"
+    },
+    {
+      "id": "Week 2 Monday",
+      "name": "Week 2 Monday",
+      "file": "Week 2 Monday.csv"
+    },
+    {
+      "id": "Week 2 Thursday",
+      "name": "Week 2 Thursday",
+      "file": "Week 2 Thursday.csv"
+    },
+    {
+      "id": "Week 2 Tuesday",
+      "name": "Week 2 Tuesday",
+      "file": "Week 2 Tuesday.csv"
+    },
+    {
+      "id": "Week 2 Wednessday",
+      "name": "Week 2 Wednessday",
+      "file": "Week 2 Wednessday.csv"
+    },
+    {
+      "id": "Week 3 Friday",
+      "name": "Week 3 Friday",
+      "file": "Week 3 Friday.csv"
+    },
+    {
+      "id": "Week 3 Tuesday",
+      "name": "Week 3 Tuesday",
+      "file": "Week 3 Tuesday.csv"
+    },
+    {
+      "id": "Week 3 Wednessday",
+      "name": "Week 3 Wednessday",
+      "file": "Week 3 Wednessday.csv"
+    },
+    {
+      "id": "Week 3 thursday",
+      "name": "Week 3 thursday",
+      "file": "Week 3 thursday.csv"
+    },
+    {
+      "id": "Week 4 Friday",
+      "name": "Week 4 Friday",
+      "file": "Week 4 Friday.csv"
+    },
+    {
+      "id": "Week 4 Monday",
+      "name": "Week 4 Monday",
+      "file": "Week 4 Monday.csv"
+    },
+    {
+      "id": "Week 4 Thurs",
+      "name": "Week 4 Thurs",
+      "file": "Week 4 Thurs.csv"
+    },
+    {
+      "id": "Week 4 Tuesday",
+      "name": "Week 4 Tuesday",
+      "file": "Week 4 Tuesday.csv"
+    },
+    {
+      "id": "Week 4 Wednessday",
+      "name": "Week 4 Wednessday",
+      "file": "Week 4 Wednessday.csv"
+    },
+    {
+      "id": "week 3 Beaverlodge -Elmsworth",
+      "name": "week 3 Beaverlodge -Elmsworth",
+      "file": "week 3 Beaverlodge -Elmsworth.csv"
+    },
+    {
+      "id": "week1 Beaverlodge -Elmsworth",
+      "name": "week1 Beaverlodge -Elmsworth",
+      "file": "week1 Beaverlodge -Elmsworth.csv"
+    }
+  ]
+}

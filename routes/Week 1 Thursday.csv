@@ -1,0 +1,20 @@
+CustomerID,Week,Day,Company,Address,Location,Notes,Phone,Email,Delivery Fee ,,,,,,Active
+a4e62a49,week1,Thu,A.R Thomson Group,Unit 101, 6902 98 Street, Clairmont, AB T8X 5A4,,Lunch Room ,538-1256,,,,,true
+cf73f493,week1,Thu,United Safety Ltd.,9602 69 Avenue, Clairmont, AB T8X 4A2,,Closet Front ,780-830-5474,,,,,,true
+4efab410,week1,Thu,Red Deer Ironworks,Unit 6, 10602 79 Avenue, Clairmont, AB T8X 5B5,,Parts Room,,,,,,true
+657f5fc6,week1,Thu,Enercorp Sand Solutions,10201 88 Avenue, Clairmont, AB T8X 0G9,,Office/warehouse/mechanic/dispatch,,,,,,,true
+07385749,week1,Thu,Max Fuel,10702 79 Avenue, Clairmont, AB T8X 5B5,,Separate slip, Central Room/Shop ,,,,,,true
+8a5a5e00,week1,Thu,Liberty Oil,9602 72 Avenue, Bay 15, Clairmont, AB T8X 4A2,,,,,,,,true
+3dcb0394,week1,Thu,FedEx Ground,Unit 101, 6901 98 Street, Clairmont, AB T8X 5A4,,Lunch Room,,,,,,true
+a455c18c,week1,Thu,E&P Wireline Liberty,10120 123 Street, Clairmont, AB T8X 5A2,,Shop/Upstairs ,Debbie 402-3060 ,,,,,,true
+6f79c6e4,week1,Thu,Isolation Equipment,12925 97B Street, Grande Prairie, AB T8V 7N3,,Near Vending Machine,,,,,,,true
+057955f4,week1,Thu,Northern Metalic Sales,8502 99 Street, Clairmont, AB T8V 0P2,,,,,,,,,true
+fb978040,week1,Thu,Triple Threat Diesel,Unit 104, 7001 98 Street, Clairmont, AB T8X 5A4,,,,,,,,true
+2ffd6763,week1,Thu,Force Inspection,10301 70 Avenue, Clairmont, AB T8X 4A1,,,780-532-1281,,,,,,true
+07535527,week1,Thu,UFA Farm Store,15602 101 Street, Grande Prairie, AB T8V 0P2,,,,,,,,,true
+adf0f235,,,Westmax,9214 85 Avenue, Clairmont, AB T8X 5A1,,,,,,,,,true
+2255fb46,,,Liberty Oilfield Services,9602-72 Ave Clairmont, AB T8X 5B3,,,,,[Route: Week 1 > 1 Thursday] [Day: Wednesday] Need Paper copy. Also delivery to GUN shop, Lab and E&P wireline,,,,true
+c239d46d,,,Enercorp Sand Solutions,10201-88 Ave Clairmont, AB T0H 0W0,,780-538-0037,,accountspayable@enercorp.net,[Route: Week 1 > 1 Thursday] [Day: Wednesday],,,,,true
+d581caf2,,,Fed Ex,101,6901-98 street Clairmont, AB T0H 0W0,,780-539-2378,,beverly.bancale@fedex.com,[Route: Week 1 > 1 Thursday] [Day: Wednesday],,,,true
+26707243,,,Westmax Trucking,9214-85 Ave Clairmont AB T8X 0S9,,780-402-0760,,admin@westmaxtrucking.com,[Route: Week 1 > 1 Thursday] [Day: Wednesday],,,,,,true
+2f60eac1,,,Ledcor Highways,8001-98 Street Clairmont, AB T0H 0W0,$17.00,780-933-5185,,APInquiries@ledcor.com,[Day: Tuesday],,,,,true

@@ -1,0 +1,26 @@
+CustomerID,Week,Day,Company,Address,Location,Notes,Phone,Email,Delivery fee ,,,,Active
+dbbd944b,week1,Wed,Contain Enviro Services,13535 97 Street, Grande Prairie, AB T8V 4H4,Select standard fee,3 LOCATIONS Upstairs & mainfloor,,accountspayable@contain.ca,,,true
+615ccec8,week1,Wed,Bluewave Cardlock,14125 99 Street, Grande Prairie, AB T8V 7B1,Select standard fee,,,accounts.payable@parkland.ca,,,true
+97e7e3c3,week1,Wed,Speedy Collision,12704 100 Street, Grande Prairie, AB T8V 4H8,$17.00,Will try 10B every 2 weeks,,payables.windsorford@gmail.com,,,true
+9a99da47,week1,Wed,ROIL Projects,9401 158 Avenue, Grande Prairie, AB T8X 0M7,$17.00,,,accounts@roil.ca,,,true
+7ec2ff31,week1,Wed,Tier 1 Energy Solutions,9329 144 Avenue, Grande Prairie, AB T8V 4Z1,$17.00,,,payables@tier1energy.ca,,,true
+554c6d23,week1,Wed,KMA Construction,9503 154 Avenue, Grande Prairie, AB T8X 0M5,,PO# 20087904 / 20047662,,,,,true
+34afbe02,week1,Wed,Keyera GP,9516 146 Avenue, Grande Prairie, AB T8V 8P1,,,780-900-7044,,,,true
+3c45cbdc,week1,Wed,Colter Energy LP,14011 97 Street, Grande Prairie, AB T8V 7B2,Select standard fee,Door code 5231,,ap@colterenergy.com,,,true
+3ddcb0ac,week1,Wed,Essential Coil,2A 63014 TWP RD 724, Clairmont, AB T8X 4A2,$17.00,,,,,,true
+cb294ccb,week1,Wed,Star Autobody,15110 89 Street, Grande Prairie, AB T8X 0M2,Select standard fee,,,,,,true
+a851e9d2,week1,Wed,Victor Energy (Body Shop),14213 97 Street, Grande Prairie, AB T8V 7B2,$17.00,,,accountspayable@victorenergy.ca,,,true
+18470062,week1,Wed,Victor Energy (Mech.),14310 97 Street, Grande Prairie, AB T8V 7B3,Select standard fee,,,accountspayable@victorenergy.ca,,,true
+c5bd3cde,week1,Wed,Barr None,13 63014 TWP RD 724, Clairmont, AB T8X 4A2,Select standard fee,,,office@barrnonemechanical.com,,,true
+da7705e5,week1,Wed,Rocky Mountain Equip.,15709 101 Street, Grande Prairie, AB T8V 0P2,$17.00,780-882-7637,,jatkinson@rockymtn.com,,,true
+1ceb93ca,week1,Wed,Command Fishing,14801 89 Street, Grande Prairie, AB T8X 0M2,$17.00,780-532-7713,,ap@fishingsolutions.ca,,,true
+b5222454,week1,Wed,Torrent Mechanical,9241 141 Avenue, Grande Prairie, AB T8V 5T2,$17.00,1-587-259-0149,,office@torrent-mechanical.ca,,,true
+03c88861,week1,Wed,PepsiCo Foods,14302 93 Street, Grande Prairie, AB T8V 7Z8,$17.00,1-403-571-5917,780-539-1437,bonnie.conner@pepsico.com,,,true
+af4334d9,week1,Wed,RB Oilfield Hauling Inc,9328 144 Avenue, Grande Prairie, AB T8V 8E4,$17.00,780-539-1437,,admin@RBOilfield.ca,,,true
+eac6c37e,week1,Wed,Ideal Completions,9302 144 Avenue, Grande Prairie, AB T8V 8E4,$17.00,1-587-393-3646,,accounts.payablecanada@idealcompletions.com,,,true
+303e0c4f,week1,Wed,Full Force Ventures,14915 89 Street, Grande Prairie, AB T8X 0J2,$17.00,,,ap@fullforceventures.com,,,true
+317dc53e,,,Benedict Pipelines,9202 154 Avenue, Grande Prairie, AB T8X 0L2,$17.00,778-586-1191,,tammy@benedictpipeline.com,,,true
+24518b07,,,Westland Insurance,9917 116 Avenue, Grande Prairie, AB T8V 5W3,$17.00,780-532-7800,,invoices@westlandinsurance.ca,,,true
+a3c980c9,,,Collicutt Energy Services Corp,9019-150 Ave Grande Prairie,AB T8X 0B1,$17.00,,,apinquiry@collicutt.com,RUSH ORDER - 4/7/2026 | Email: apinquiry@collicutt.com,73036,,true
+d9f5198f,,,CNC Flow Control,9502-118 Street Grande Prairie,AB T8V 0M1,$17.00,,,ap@cncflowcontrol.com,RUSH ORDER - 4/8/2026 | Email: ap@cncflowcontrol.com,94390,,true
+f73226a7,,,Culligan,12001 99 Ave T8W 0J7,Select standard fee,,,,RUSH ORDER - 4/8/2026,23169,,,true

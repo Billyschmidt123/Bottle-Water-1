@@ -1,0 +1,23 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery Fee,,,,,,Active
+a142c9d6,week 4,Thursday,Liberty (Well Services),Bay 15, 9602 72 Avenue, Clairmont, AB T8X 4A2,Select standard fee,780-830-0474, Closet Front,,Matthew.Friesen@libertyenergy.com,,,true
+f2a5c76b,week 4,Thursday,Red Deer Ironworks,10002 84 Avenue, Clairmont, AB T8X 5B1,,587-298-4432,100 once a month ,,,,,,true
+7c7b4995,week 4,Thursday,Enercorp Sand Solutions,10201 88 Avenue, Clairmont, AB T8X 0G9,Select standard fee,,Both front and back,accountspayable@enercorp.net,,,,,true
+877b1bd8,week 4,Thursday,Triple Threat Diesel Inc,7002 96 Street, Clairmont, AB T8X 4A3,Select standard fee,,,ap@triplethreatdiesel.com,,,,,true
+37dbdcaa,week 4,Thursday,Aureus Energy (Green Energy),10211 97 Avenue, Clairmont, AB T8X 0T9,Select standard fee,,Lunch Room,apayable@fractionenergy.ca,,,,,true
+376153fe,week 4,Thursday,E&P Wireline,9602 72 Avenue, Clairmont, AB T8X 4A2,Select standard fee,,Near Vending Machine,Matthew.friesen@libertyenergy.com,,,,,true
+99ced900,week 4,Thursday,Northern Metallic Sales,8502 99 Street, Clairmont, AB T8V 0P2,,,4 Bottles,,,,,,true
+6be6ed81,week 4,Thursday,URBN Leaf Cannabis,7201 99 Street, Clairmont, AB T8X 5B1,Select standard fee,,Please note,ea@minhasgroup.net,,,,,true
+5eaf1b39,week 4,Thursday,Fluid Pro,9701 99 Street, Clairmont, AB T8X 0S1,Select standard fee,,,ap@fluidpro.ca,,,,,true
+9af11bb8,week 4,Thursday,Force Inspection,10301 70 Avenue, Clairmont, AB T8X 4A1,Select standard fee,,Office,ap@forceinspection.com,,,,,true
+ca2c4d38,week 4,Thursday,Max Fuel,10702 79 Avenue, Clairmont, AB T8X 5B5,Select standard fee,,REPLACE ALL EMPTIES,apgp@maxfuel.ca,,,,,true
+d17bf88c,week 4,Thursday,Westmax Trucking,9214 85 Avenue, Clairmont, AB T8X 5A1,Select standard fee,780-532-1281,,admin@westmaxtrucking.com,,,,,true
+678039f2,week 4,Thursday,UFA Farm Store,15602 101 St, Grande Prairie, AB T8X 0K7,,402-5060,,,Select standard fee,,,,true
+9a49ed2c,week 4,Thursday,Isolation Equipment,10222 79 Avenue, Clairmont, AB T8X 5B5,Select standard fee,,,accounting@isolationequipment.com,,,,,true
+843b1d56,week 4,Thursday,Dan's Oilfield,10602 79 Avenue, Clairmont, AB T8X 5B5,Select standard fee,,NEW CUSTOMER,gpadmin@dansoilfieldrentals.ca,,,,,true
+8d9699d4,week 4,Thursday,Wedrill Services,10322 74 Avenue, Clairmont, AB T8X 4A1,Select standard fee,,,craig@wedrillservices.com,,,,,true
+80f46bc1,week 5,Thursday,Steelhaus,9310 85 Avenue, Clairmont, AB T8X 5A1,Select standard fee,,,ap@steelhausinc.com,,,,,true
+6a968448,,,Triple Threat Diesel,8704-99 Street Clairmont T8X 5A8,Select standard fee,,,ap@triplethreatdiesel.com,[Day: Wednesday],,,,,,true
+dc21b4f2,,,Liberty Oilfield Services,9602-72 Ave Clairmont, AB T8X 5B3,,,,,[Route: Week 4 > 4 Thurs] [Day: Wednesday] Need Paper copy. Also delivery to GUN shop, Lab and E&P wireline,,,,true
+9bdcf7bf,,,Enercorp Sand Solutions,10201-88 Ave Clairmont, AB T0H 0W0,,780-538-0037,,accountspayable@enercorp.net,[Route: Week 4 > 4 Thurs] [Day: Wednesday],,,,,true
+dbb84348,,,NXL Technologies,9202-99 Street Clairmont,AB T8X 5A8,Select standard fee,,,,RUSH ORDER - 3/31/2026,73325,,,,true
+4cfecb8e,,,All Peace Protection,#202, 11117-100 Street Grande Prairie,AB T8V 2N2,Select standard fee,,,accounting@allpeaceprotection.com,RUSH ORDER - 4/1/2026 | Email: accounting@allpeaceprotection.com,38120,,,true

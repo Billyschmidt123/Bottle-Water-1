@@ -1,0 +1,183 @@
+<div class="modal">
+    <div class="modal-header">
+        <h2>Live Route Search & Sync</h2>
+    </div>
+
+    <div class="modal-body">
+        <label>GitHub Personal Access Token:</label>
+        <input type="password" id="ghToken" placeholder="paste token here" style="width:100%; margin-bottom:10px;">
+        
+        <div style="background: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+            <label><strong>Step 1: Find Folders</strong></label>
+            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                <input type="text" id="folderSearchQuery" placeholder="e.g. Week 1" style="flex-grow: 1; padding: 8px;">
+                <button id="btnSearchFolders" class="btn-secondary">Search Repo</button>
+            </div>
+            <p style="font-size: 0.75em; color: #666; margin-top: 5px;">Type a folder name (like 'Week') to see all CSVs inside.</p>
+        </div>
+
+        <div id="githubFileBrowser" style="display:none; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #fff;">
+            <p style="font-size: 0.85em; margin-bottom: 5px;"><strong>CSV Files Found:</strong></p>
+            <div id="fileListContainer" style="max-height: 200px; overflow-y: auto; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 5px;"></div>
+            <button id="btnGenerateManifest" class="btn-success" style="width: 100%; margin-top: 15px;">Update Manifest with Selection</button>
+        </div>
+
+        <hr>
+        <div id="importStatus" style="margin-bottom: 10px; font-weight: bold; color: #007bff; font-size: 0.9em;"></div>
+        
+        <label>Manifest Preview:</label>
+        <textarea id="jsonPreview" style="width:100%; height:100px; font-family: monospace; font-size: 11px;"></textarea>
+
+        <button id="btnPushToGithub" class="btn-primary" style="width: 100%; margin-top: 15px;">
+            <i class="fas fa-cloud-upload-alt"></i> Overwrite Master Manifest on GitHub
+        </button>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn-danger" onclick="closeModal()">Back to Manager</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    const owner = "Billyschmidt123";
+    const repo = "Bottle-Water-";
+    const status = document.getElementById('importStatus');
+    const browser = document.getElementById('githubFileBrowser');
+    const fileContainer = document.getElementById('fileListContainer');
+    const jsonPreview = document.getElementById('jsonPreview');
+
+    async function fetchFromGithub(path, token) {
+        const url = path === '' 
+            ? `https://api.github.com/repos/${owner}/${repo}/contents`
+            : `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+        
+        const res = await fetch(url, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        return res.ok ? await res.json() : null;
+    }
+
+    document.getElementById('btnSearchFolders').addEventListener('click', async function() {
+        const token = document.getElementById('ghToken').value;
+        const query = document.getElementById('folderSearchQuery').value.toLowerCase();
+        if (!token) return alert("Please enter your GitHub Token.");
+        
+        status.textContent = "Locating 'routes' directory...";
+        fileContainer.innerHTML = "";
+        let foundAny = false;
+
+        try {
+            // 1. Get root contents to find the exact 'routes' folder name
+            const rootItems = await fetchFromGithub('', token);
+            if (!rootItems) throw new Error("Could not access repository. Check token.");
+
+            const routesFolder = rootItems.find(item => item.name.toLowerCase() === 'routes' && item.type === 'dir');
+            if (!routesFolder) throw new Error("Folder named 'routes' not found in root.");
+
+            // 2. Get contents of the routes folder
+            const routesContent = await fetchFromGithub(routesFolder.path, token);
+            
+            // 3. Filter folders inside 'routes' based on your query
+            const targetFolders = routesContent.filter(item => 
+                item.type === 'dir' && item.name.toLowerCase().includes(query)
+            );
+
+            for (const folder of targetFolders) {
+                const contents = await fetchFromGithub(folder.path, token);
+                
+                for (const item of contents) {
+                    if (item.type === 'dir') {
+                        // Check one level deeper for nested folders (e.g. Week 1/Week 1)
+                        const subContents = await fetchFromGithub(item.path, token);
+                        addCsvsToList(subContents);
+                    } else if (item.name.toLowerCase().endsWith('.csv')) {
+                        addCsvsToList([item]);
+                    }
+                }
+                foundAny = true;
+            }
+
+            if (!foundAny) {
+                status.textContent = "No folders matching '" + query + "' found inside 'routes/'.";
+            } else {
+                browser.style.display = "block";
+                status.textContent = "Search complete. Check the routes you want to include.";
+            }
+        } catch (e) {
+            status.textContent = "Error: " + e.message;
+            console.error(e);
+        }
+    });
+
+    function addCsvsToList(items) {
+        if (!items) return;
+        items.filter(i => i.name.toLowerCase().endsWith('.csv')).forEach(file => {
+            // Prevent duplicates
+            if (fileContainer.querySelector(`[data-path="${file.path}"]`)) return;
+
+            const div = document.createElement('div');
+            div.style.padding = "4px 0";
+            div.innerHTML = `
+                <label>
+                    <input type="checkbox" checked data-path="${file.path}" data-name="${file.name}"> 
+                    <strong>${file.name}</strong>
+                </label> 
+                <div style="color:#888; font-size:0.75em; margin-left:22px;">Path: ${file.path}</div>
+            `;
+            fileContainer.appendChild(div);
+        });
+    }
+
+    document.getElementById('btnGenerateManifest').addEventListener('click', function() {
+        const checkboxes = fileContainer.querySelectorAll('input[type="checkbox"]:checked');
+        const routes = Array.from(checkboxes).map(cb => {
+            const path = cb.getAttribute('data-path');
+            const name = cb.getAttribute('data-name').replace(/\.csv$/i, "");
+            return {
+                id: name.toLowerCase().replace(/\s+/g, '-'),
+                name: name,
+                file: path
+            };
+        });
+
+        jsonPreview.value = JSON.stringify({ routes: routes }, null, 4);
+        status.textContent = "Manifest generated locally.";
+    });
+
+    document.getElementById('btnPushToGithub').addEventListener('click', async function() {
+        const token = document.getElementById('ghToken').value;
+        const content = jsonPreview.value;
+        if (!token || !content) return alert("Please generate a manifest first.");
+
+        const confirmPush = confirm("Update the master manifest for the whole team?");
+        if (!confirmPush) return;
+
+        status.textContent = "Uploading to GitHub...";
+        const manifestPath = 'ROUTES/routes-manifest.json';
+        
+        const shaRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${manifestPath}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        let sha = shaRes.ok ? (await shaRes.json()).sha : null;
+
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${manifestPath}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: "Update route manifest via manager search",
+                content: btoa(unescape(encodeURIComponent(content))),
+                sha: sha
+            })
+        });
+
+        if (res.ok) {
+            alert("Master List Updated! Techs can now Refresh.");
+            status.textContent = "SUCCESS";
+        } else {
+            alert("Upload failed. Ensure token has 'Write' access.");
+        }
+    });
+})();
+</script>

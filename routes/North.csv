@@ -1,0 +1,24 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery Fee,,,,,Active
+7caa8aae,Week 2 ,TuesDay,Company,Combined Address,,,,,,,,,,true
+5ec89702,Week 2 ,TuesDay,Western Financial,10021 101 Street, Peace River, AB T8S 1S4,,,,,,,,true
+43ff54f0,Week 2,Tuesday,Western Financial,5406 50 Street, Grimshaw, AB T0H 1W0,,,4 Bottles,,,,,true
+104f1d25,Week 2,Tuesday,Western Financial,10013 110 Street, Fairview, AB T0H 1L0,,,4 Bottles,,,,,true
+3afe9d7a,Week 2,Tuesday,Western Chartered,9815 98 Avenue, Peace River, AB T8S 1R3,,,,,,,,true
+e654e758,Week 2,Tuesday,UFA Grimshaw,4602 57 Avenue, Grimshaw, AB T0H 1W0,,,,,,,,true
+15f9a356,Week 2,Tuesday,The Brick,7525 100 Avenue, Peace River, AB T8S 1M3,,,,,,,,true
+e7f7fd53,Week 2,Tuesday,Cargill Rycroft,102 46 Street, Rycroft, AB T0H 3A0,,,,,,,,true
+9601d7b6,Week 2,Tuesday,Ruel Concrete,9005 98 Street, Peace River, AB T8S 1M8,Select standard fee,,10 Bottles,,,,,true
+7e7f6403,Week 2,Tuesday,Scotia Bank,10017 100 Street, Peace River, AB T8S 1S3,,,4 Bottles,,,,,true
+283e6d40,Week 2,Tuesday,Town of Peace River,9911 100 Street, Peace River, AB T8S 1S4,,,,,,,,true
+fade1051,Week 2,Tuesday,Fountain Tire,9015 96 Avenue, Peace River, AB T8S 1G3,,,Fish and Wildlife,,,,,true
+74f0808d,Week 2,Tuesday,Justice Solicitor General,Suite 104, 9621 96 Avenue, Peace River, AB T8S 1T4,,,4 Bottles,,,,true
+6edca5e8,Week 2,Tuesday,Invision chartered accountants,9811-98ave Peace River AB, T8S 1S5,Select standard fee,,,admin@invisioncpa.com,,,,,true
+739e9bfe,Week 2,Tuesday,Messner Gelineau,2nd Floor, 8813 100 Avenue, Peace River, AB T8S 1M2,Select standard fee,780-624-3944,,,,,true
+3a6fa301,Week 2,Tuesday,GOA - Apprenticeship,Suite 8301, 9621 96 Avenue, Peace River, AB T8S 1T4,,,13 Bottles,,,,true
+372bbe78,Week 2,Tuesday,Court of King's Bench,9905 97 Avenue, Peace River, AB T8S 1T4,,,,,,,,true
+94d08c82,Week 2,Tuesday,HSBC Peace River,10010 101 Street, Peace River, AB T8S 1P5,,,4 Bottles,,,,,true
+d8a66f1b,Week 2,Tuesday,Mathieu Hryniuk LLP,10012 101 Street, Peace River, AB T8S 1P5,,780-837-2521,,,,,,true
+0a2db8a7,Week 2,Tuesday,AFSC Falher,701 Main Street SW, Falher, AB T0H 1M0,,780-332-4494,,,,,,true
+6c973a42,Week 2,Tuesday,AFSC Peace River,10006 100 Street, Peace River, AB T8S 1S3,,780-835-4975,,,,,,true
+707beeed,Week 2,Tuesday,AFSC Fairview,10209 109 Street (Provincial Bldg), Fairview, AB T0H 1L0,,,,,,,,true
+ba35d07e,,,EGIS,10032-99 street Peace River,AB T8S 1S3,$17.00,,,ap.canada@egis-group.com,,,,,true

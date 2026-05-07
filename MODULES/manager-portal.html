@@ -1,0 +1,93 @@
+<!-- MODULES/manager-portal.html -->
+<div class="manager-menu">
+    <div class="manager-header">
+        <h2 style="margin: 0; color: #333;"><i class="fas fa-tasks"></i> Manager Portal</h2>
+        <p style="font-size: 0.85em; color: #666;">Grande Prairie Fleet Operations</p>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+    <div class="manager-actions">
+        <!-- New Bulk Import Feature -->
+        <button onclick="window.loadModule('route-importer')" class="btn-primary" style="width:100%; margin-bottom:15px; padding: 12px; font-weight: bold;">
+            <i class="fas fa-file-upload"></i> Bulk Import CSV Routes
+        </button>
+
+        <button onclick="toggleJsonEditor()" class="btn-secondary" style="width:100%; margin-bottom:15px;">
+            <i class="fas fa-edit"></i> Manually Edit Route JSON
+        </button>
+        
+        <!-- Placeholder for existing manager functions -->
+        <button class="btn-secondary" style="width:100%; margin-bottom:10px; opacity: 0.7;">
+            <i class="fas fa-users"></i> Manage Technicians
+        </button>
+        
+        <button class="btn-secondary" style="width:100%; margin-bottom:10px; opacity: 0.7;">
+            <i class="fas fa-history"></i> View Delivery Logs
+        </button>
+    </div>
+
+    <!-- Hidden Manual Editor Section -->
+    <div id="manualJsonSection" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
+        <h4 style="margin-top: 0;">Manual Manifest Editor</h4>
+        <p style="font-size: 0.8em; color: #666;">Paste a valid routes JSON here to force-update the dropdowns.</p>
+        <textarea id="manualJsonInput" style="width:100%; height:120px; font-family: monospace; font-size: 11px; margin-bottom: 10px;" placeholder='{"routes": []}'></textarea>
+        <button id="btnApplyManualJson" class="btn-success" style="width: 100%;">Update System Memory</button>
+    </div>
+
+    <div class="manager-footer" style="margin-top: 30px;">
+        <button class="btn-danger" onclick="closeModal()" style="width: 100%;">
+            <i class="fas fa-times"></i> Close Manager
+        </button>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Logic to toggle the manual editor visibility
+    window.toggleJsonEditor = function() {
+        const section = document.getElementById('manualJsonSection');
+        const currentData = localStorage.getItem('logiflowRouteCache_v1');
+        
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            if (currentData) {
+                // Pre-fill with current data so the user isn't starting from scratch
+                try {
+                    const parsed = JSON.parse(currentData);
+                    document.getElementById('manualJsonInput').value = JSON.stringify({routes: parsed.routes}, null, 4);
+                } catch(e) {}
+            }
+        } else {
+            section.style.display = 'none';
+        }
+    };
+
+    // Logic to save the manual edits
+    document.getElementById('btnApplyManualJson').addEventListener('click', function() {
+        const jsonString = document.getElementById('manualJsonInput').value;
+        
+        if (typeof window.updateManifestManually === 'function') {
+            const success = window.updateManifestManually(jsonString);
+            if (success) {
+                alert("Manifest updated successfully! Dropdowns have been refreshed.");
+                document.getElementById('manualJsonSection').style.display = 'none';
+            } else {
+                alert("Error: Invalid JSON format. Please check your brackets and commas.");
+            }
+        } else {
+            alert("Error: System update function not found. Please refresh index.html");
+        }
+    });
+})();
+</script>
+
+<style>
+    .manager-menu { padding: 10px; }
+    .manager-header h2 { font-size: 1.4em; }
+    .btn-primary { background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-secondary { background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-success { background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 10px; }
+    .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 10px; }
+    button:hover { filter: brightness(90%); }
+</style>

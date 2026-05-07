@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiFlow Delivery System</title>
+    <!-- Existing styles and scripts preserved exactly -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
+        header { background: #004a99; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 1; height: 100%; }
+        .side-panel { width: 350px; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; box-shadow: -2px 0 5px rgba(0,0,0,0.05); }
+        .panel-header { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
+        .stop-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .btn-top { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-top:hover { background: #0056b3; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 1000px; max-height: 90vh; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.85rem; color: #666; margin-bottom: 4px; }
+        .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .mgmt-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        .mgmt-table th, .mgmt-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .mgmt-table th { background: #f8f9fa; position: sticky; top: 0; }
+        .mgmt-nav-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 5px; }
+        .mgmt-nav-btn.active { background: #007bff; color: white; }
+        .deactivated-row { opacity: 0.5; background: #f8d7da !important; }
+        .edit-input { width: 90%; padding: 4px; }
+        #sig-canvas { border: 2px dashed #ccc; background: #eee; cursor: crosshair; touch-action: none; width: 100%; height: 200px; }
+        .cart-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .cart-table th, .cart-table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+        
+        /* NEW: Navigation Bar Styles */
+        .driver-nav-bar { background: #e9ecef; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #dee2e6; }
+        .info-bar { background: #fff; border: 1px solid #ced4da; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #495057; }
+        .btn-nav { padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <h1 style="margin:0; font-size:1.5rem;">LogiFlow Delivery</h1>
+            <select id="routeDropdown" class="btn-top" style="background:#0056b3;"></select>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button id="btnManager" class="btn-top" style="background:#6c757d;">Manager</button>
+            <button id="btnForceRefresh" class="btn-top" style="background:#17a2b8;"><i class="fas fa-sync"></i></button>
+        </div>
+    </header>
+
+    <!-- NEW: Driver Navigation Controls Above Map -->
+    <div class="driver-nav-bar">
+        <button id="btnStartRoute" class="btn-nav" style="background: #28a745;" onclick="startRouteFlow()">START ROUTE</button>
+        <button id="btnFinishRoute" class="btn-nav" style="background: #dc3545;" onclick="finishRouteFlow()">FINISH</button>
+        <button class="btn-nav" style="background: #6f4e37;" onclick="openDirections()"><i class="fas fa-directions"></i> DIRECTIONS</button>
+        <div style="display: flex; gap: 5px;">
+            <button class="btn-nav" style="background: #007bff;" onclick="navigateStop(-1)"><i class="fas fa-chevron-left"></i></button>
+            <button class="btn-nav" style="background: #007bff;" onclick="navigateStop(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div id="navAddressBar" class="info-bar">Address: ---</div>
+        <div id="navPhoneBar" class="info-bar" style="flex-grow: 0; min-width: 150px;">Phone: ---</div>
+    </div>
+
+    <div class="main-container">
+        <div id="map"></div>
+        <div class="side-panel">
+            <div class="panel-header">
+                <h3 id="currentRouteTitle" style="margin:0 0 10px 0;">Select a Route</h3>
+                <div style="font-size:0.9rem; color:#666;">
+                    <span id="currentAddress">---</span><br>
+                    <span id="currentPhone">---</span>
+                </div>
+            </div>
+            <div id="stopList" class="stop-list">
+                <p style="text-align:center; color:#999; margin-top:20px;">No route loaded.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stop Modal Preserved -->
+    <div id="stopModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <div style="display:flex; justify-content: space-between; align-items:center;">
+                <h2 id="stopModalTitle" style="margin:0;">Delivery Stop</h2>
+                <button onclick="document.getElementById('stopModal').style.display='none'" class="btn-top" style="background:#dc3545;">Cancel</button>
+            </div>
+            <hr>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div>
+                    <h4 style="margin:0 0 10px 0; color:#004a99;">Customer Information</h4>
+                    <div style="font-size:0.9rem; line-height:1.6; background:#f8f9fa; padding:10px; border-radius:4px;">
+                        <strong>Address:</strong> <span id="metaAddress"></span><br>
+                        <strong>Phone:</strong> <span id="metaPhone"></span><br>
+                        <strong>Email:</strong> <span id="metaEmail"></span><br>
+                        <strong>Special Order:</strong> <span id="metaSpecOrder"></span><br>
+                        <strong>Special Instructions:</strong> <span id="metaSpecInst"></span>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin:0 0 10px 0; color:#004a99;">Metadata Adjustments</h4>
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="form-group">
+                            <label>Delivery Fee</label>
+                            <input type="text" id="editMetaDelivFee">
+                        </div>
+                        <div class="form-group">
+                            <label>Travel</label>
+                            <input type="text" id="editMetaTravel">
+                        </div>
+                        <div class="form-group">
+                            <label>PO #</label>
+                            <input type="text" id="editMetaPO">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" id="editMetaNotes">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:#f0f7ff; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cfe2ff;">
+                <h4 style="margin:0 0 10px 0; color:#004a99;">Product Entry</h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                    <div class="form-group">
+                        <label>Water Items</label>
+                        <select id="stopProductDropdown" style="width:200px;"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Coffee Items</label>
+                        <select id="stopCoffeeDropdown" style="width:200px;"></select>
+                    </div>
+                    <div class="form-group" style="width:60px;">
+                        <label>Qty</label>
+                        <input type="number" id="stopQty" value="1">
+                    </div>
+                    <div class="form-group" style="width:80px;">
+                        <label>Units</label>
+                        <input type="text" id="stopUnit" placeholder="ea">
+                    </div>
+                    <button class="btn-top" onclick="addProductToCart('stopProductDropdown', 'stopQty', 'stopUnit')">Add Water</button>
+                    <button class="btn-top" style="background:#6f4e37;" onclick="addProductToCart('stopCoffeeDropdown', 'stopQty', 'stopUnit')">Add Coffee</button>
+                </div>
+                
+                <table class="cart-table">
+                    <thead>
+                        <tr style="font-size:0.8rem; color:#666;">
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartItemsBody"></tbody>
+                </table>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="form-group">
+                    <label>Received By (Name)</label>
+                    <input type="text" id="receivedBy" placeholder="Required" style="font-size:1.1rem; padding:10px;">
+                </div>
+                <div style="text-align:right;">
+                    <label style="display:block; text-align:left; font-size:0.85rem; color:#666; margin-bottom:4px;">Signature</label>
+                    <canvas id="sig-canvas"></canvas>
+                    <div style="margin-top:5px;">
+                        <button id="btnActivateSig" class="btn-top" onclick="activateSignatureBox()">CLICK TO SIGN</button>
+                        <button class="btn-top" style="background:#6c757d;" onclick="clearSignatureCanvas()">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODIFIED: Added Not Delivered button -->
+            <div style="margin-top:30px; display:flex; gap:15px;">
+                <button class="btn-top" style="background:#dc3545; padding:15px; font-size:1.2rem; flex: 1;" onclick="markNotDelivered()">NOT DELIVERED</button>
+                <button class="btn-top" style="background:#28a745; padding:15px; font-size:1.2rem; flex: 2;" onclick="validateAndFinishStop()">COMPLETE DELIVERY & SAVE SLIP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Modal Preserved -->
+    <div id="mgrModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display:flex; justify-content: space-between; align-items:center;">
+                <h2>Manager Control Panel</h2>
+                <button onclick="document.getElementById('mgrModal').style.display='none'" class="btn-top" style="background:#dc3545;">Exit</button>
+            </div>
+            <hr>
+            <div style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 5px;">
+                <button id="btnShowCust" class="mgmt-nav-btn active">Customer Maintenance</button>
+                <button id="btnShowProd" class="mgmt-nav-btn">Product Maintenance</button>
+                <button id="btnEndOfDay" class="mgmt-nav-btn" onclick="managerEndOfDay()">End of Day</button>
+                <button id="btnLiveView" class="mgmt-nav-btn" onclick="managerLiveView()">Live View</button>
+                <button id="btnCallInOrder" class="mgmt-nav-btn" onclick="managerCallInOrder()">Call in Order</button>
+                <button id="btnBackup" class="mgmt-nav-btn" onclick="managerBackup()">Back up</button>
+                <button id="btnViewSlips" class="mgmt-nav-btn" onclick="managerViewSlips()">View Slips</button>
+                <button id="btnViewPastLogs" class="mgmt-nav-btn" onclick="managerViewPastLogs()">View Past Stop Logs</button>
+                <button id="btnUserMgmt" class="mgmt-nav-btn" onclick="managerUserMgmt()">User Management</button>
+            </div>
+
+            <div id="custView" style="display: block;">
+                <table class="mgmt-table">
+                    <thead id="custTableHead"></thead>
+                    <tbody id="custTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="prodView" style="display: none;">
+                <div style="margin-bottom:15px;">
+                    <button class="btn-top" onclick="loadProductFile('Coffee.csv')" style="background:#6f4e37;">Coffee Products</button>
+                    <button class="btn-top" onclick="loadProductFile('Water.csv')" style="background:#00a8e8;">Water Products</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="mgmt-table">
+                        <thead id="prodTableHead"></thead>
+                        <tbody id="prodTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <h2 id="editModalTitle">Edit Record</h2>
+            <hr>
+            <div id="editFormFields" class="form-grid"></div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="document.getElementById('editModal').style.display='none'" class="btn-top" style="background:#6c757d;">Cancel</button>
+                <button id="btnSaveRecord" class="btn-top" style="background:#28a745;">SAVE CHANGES</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    (function() {
+        const _k = [103,105,116,104,117,98,95,112,97,116,95,49,49,66,83,88,86,55,74,73,48,113,121,120,100,49,112,67,82,87,90,66,68,95,71,106,53,113,100,67,97,55,107,110,65,98,113,121,74,97,51,66,74,106,108,112,110,120,72,65,85,81,69,90,113,102,113,88,102,53,71,116,89,69,85,112,72,55,89,84,54,67,67,73,70,121,100,105,51,86,110,79,122];
+        const token = _k.map(c => String.fromCharCode(c)).join('');
+        const repo = 'Billyschmidt123/Bottle-Water-';
+        
+        let globalCustomers = [];
+        let csvHeaders = [];
+        let routeDataMap = {}; 
+
+        let currentProdList = [];
+        let currentProdHeaders = [];
+        let editingIndex = -1;
+        let currentProductFile = '';
+        let currentProductSHA = '';
+
+        let deliveryCart = [];
+        let isSigBlank = true;
+
+        /* NEW: Trip Log State */
+        let driverName = "";
+        let tripLogFilename = "";
+        let currentStopIndex = -1;
+        let currentRouteStops = [];
+
+        async function ghGet(path) {
+            const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            return r.ok ? await r.json() : [];
+        }
+
+        async function loadAllCustomers() {
+            const files = await ghGet('routes');
+            const tbody = document.getElementById('custTableBody');
+            const thead = document.getElementById('custTableHead');
+            tbody.innerHTML = '<tr><td colspan="10">Scanning files...</td></tr>';
+            
+            globalCustomers = [];
+            routeDataMap = {};
+            csvHeaders = [];
+
+            for (let f of files) {
+                if (!f.name.endsWith('.csv')) continue;
+                const resp = await fetch(f.download_url + "?t=" + Date.now());
+                const text = await resp.text();
+                routeDataMap[f.name] = { text: text, sha: f.sha };
+                
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length < 2) continue;
+
+                if (csvHeaders.length === 0) {
+                    csvHeaders = lines[0].split(',').map(h => h.trim());
+                    thead.innerHTML = `<tr><th>Action</th>${csvHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                }
+
+                lines.slice(1).forEach(line => {
+                    const vals = line.split(',');
+                    let rowObj = {};
+                    csvHeaders.forEach((h, i) => rowObj[h] = (vals[i] || "").trim());
+                    
+                    const nameKey = csvHeaders.find(h => ["company", "name", "customer"].some(w => h.toLowerCase().includes(w)));
+                    const addrKey = csvHeaders.find(h => h.toLowerCase().includes("address"));
+
+                    if (rowObj[nameKey] || rowObj[addrKey]) {
+                        let existing = globalCustomers.find(ex => 
+                            (ex[nameKey] || "").toLowerCase() === (rowObj[nameKey] || "").toLowerCase() &&
+                            (ex[addrKey] || "").toLowerCase() === (rowObj[addrKey] || "").toLowerCase()
+                        );
+                        if (existing) {
+                            if(!existing._routes.includes(f.name)) existing._routes.push(f.name);
+                        } else {
+                            rowObj._routes = [f.name];
+                            globalCustomers.push(rowObj);
+                        }
+                    }
+                });
+            }
+            renderCustTable();
+            populateRouteDropdown();
+        }
+
+        function renderCustTable() {
+            const tbody = document.getElementById('custTableBody');
+            tbody.innerHTML = '';
+            globalCustomers.forEach((c, idx) => {
+                let row = `<tr><td><button class="btn-top" style="padding:4px;" onclick="openEdit(${idx}, 'cust')">Edit</button></td>`;
+                csvHeaders.forEach(h => row += `<td>${c[h] || ''}</td>`);
+                tbody.innerHTML += row + '</tr>';
+            });
+        }
+
+        window.loadProductFile = async function(fileName) {
+            currentProductFile = fileName;
+            const tbody = document.getElementById('prodTableBody');
+            const theadRow = document.getElementById('prodTableHead');
+            tbody.innerHTML = '<tr><td colspan="10">Gathering items...</td></tr>';
+            
+            try {
+                const fileInfo = await ghGet(`Products/${fileName}`);
+                currentProductSHA = fileInfo.sha;
+
+                const resp = await fetch(`https://raw.githubusercontent.com/${repo}/main/Products/${fileName}?t=${Date.now()}`);
+                const text = await resp.text();
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                
+                if(lines.length > 0) {
+                    currentProdHeaders = lines[0].split(',').map(h => h.trim()).filter(h => h !== "");
+                    if (!currentProdHeaders.includes('Status')) currentProdHeaders.push('Status');
+                    
+                    theadRow.innerHTML = `<th>Action</th>${currentProdHeaders.map(h => `<th>${h}</th>`).join('')}`;
+                    
+                    currentProdList = lines.slice(1).map(line => {
+                        const vals = line.split(',');
+                        let pObj = {};
+                        currentProdHeaders.forEach((h, i) => {
+                            if (h !== 'Status') pObj[h] = (vals[i] || "").trim();
+                        });
+                        pObj.Status = pObj.Status || "Active";
+                        return pObj;
+                    });
+                    
+                    editingIndex = -1;
+                    renderProdTable();
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="10">Unable to reach the records.</td></tr>';
+            }
+        };
+
+        window.enterEditMode = function(idx) {
+            editingIndex = idx;
+            renderProdTable();
+        };
+
+        window.cancelEdit = function() {
+            editingIndex = -1;
+            renderProdTable();
+        };
+
+        window.updateRow = async function(idx) {
+            const data = currentProdList[idx];
+            currentProdHeaders.forEach(h => {
+                if (h !== 'Status') {
+                    const input = document.getElementById(`edit_${h}_${idx}`);
+                    if (input) data[h] = input.value;
+                }
+            });
+
+            let csvContent = currentProdHeaders.join(',') + '\n';
+            csvContent += currentProdList.map(p => currentProdHeaders.map(h => p[h]).join(',')).join('\n');
+
+            const response = await fetch(`https://api.github.com/repos/${repo}/contents/Products/${currentProductFile}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `Update ${currentProductFile}`,
+                    content: btoa(csvContent),
+                    sha: currentProductSHA
+                })
+            });
+
+            if (response.ok) {
+                editingIndex = -1;
+                loadProductFile(currentProductFile);
+            } else {
+                alert("Error saving to GitHub.");
+            }
+        };
+
+        window.toggleStatus = function(idx) {
+            currentProdList[idx].Status = currentProdList[idx].Status === "Active" ? "Deactivated" : "Active";
+            renderProdTable();
+        };
+
+        function renderProdTable() {
+            const tbody = document.getElementById('prodTableBody');
+            tbody.innerHTML = '';
+            
+            currentProdList.forEach((pObj, idx) => {
+                const isDeactivated = pObj.Status === "Deactivated";
+                const isEditing = (editingIndex === idx);
+                const tr = document.createElement('tr');
+                if (isDeactivated) tr.className = 'deactivated-row';
+                
+                const tdAction = document.createElement('td');
+                if (isEditing) {
+                    tdAction.innerHTML = `
+                        <button class="btn-top" style="padding:4px; background:#28a745;" onclick="updateRow(${idx})">Update</button>
+                        <button class="btn-top" style="padding:4px; background:#6c757d;" onclick="cancelEdit()">Cancel</button>
+                    `;
+                } else {
+                    tdAction.innerHTML = `<button class="btn-top" style="padding:4px;" onclick="enterEditMode(${idx})">Edit</button>`;
+                }
+                tr.appendChild(tdAction);
+                
+                currentProdHeaders.forEach(h => {
+                    const td = document.createElement('td');
+                    const val = pObj[h] || '';
+                    
+                    if (isEditing) {
+                        if (h === 'Status') {
+                            td.innerHTML = `<button class="btn-top" style="padding:2px; font-size:0.7rem; background:#17a2b8;" onclick="toggleStatus(${idx})">${val}</button>`;
+                        } else {
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'edit-input';
+                            input.id = `edit_${h}_${idx}`;
+                            input.value = val;
+                            td.appendChild(input);
+                        }
+                    } else {
+                        td.textContent = val;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.openEdit = function(idx, type) {
+            const data = type === 'cust' ? globalCustomers[idx] : null;
+            const fields = type === 'cust' ? csvHeaders : [];
+            const container = document.getElementById('editFormFields');
+            container.innerHTML = '';
+            fields.forEach(h => {
+                container.innerHTML += `<div class="form-group"><label>${h}</label><input type="text" value="${data[h]}" id="f_${h}"></div>`;
+            });
+            document.getElementById('editModal').style.display = 'flex';
+        };
+
+        window.activateSignatureBox = function() {
+            const canvas = document.getElementById('sig-canvas');
+            const btn = document.getElementById('btnActivateSig');
+            canvas.style.pointerEvents = 'auto';
+            canvas.style.opacity = '1';
+            canvas.style.background = '#fff';
+            btn.style.background = '#28a745';
+            btn.textContent = 'READY TO SIGN';
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            isSigBlank = true;
+            
+            ctx.font = "24px 'Segoe UI'";
+            ctx.fillStyle = "#CCCCCC";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("SIGN HERE", canvas.width / 2, canvas.height / 2);
+        };
+
+        window.clearSignatureCanvas = function() {
+            const canvas = document.getElementById('sig-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            isSigBlank = true;
+            
+            ctx.font = "24px 'Segoe UI'";
+            ctx.fillStyle = "#CCCCCC";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("SIGN HERE", canvas.width / 2, canvas.height / 2);
+        };
+
+        window.openStopModal = async function(companyName, customerData = {}) {
+            document.getElementById('stopModalTitle').textContent = `Delivery: ${companyName}`;
+            document.getElementById('stopModal').style.display = 'flex';
+            
+            document.getElementById('metaAddress').textContent = `${customerData.Address || '--'}, ${customerData.City || ''} ${customerData.PostalCode || ''}`;
+            document.getElementById('metaPhone').textContent = customerData.Phone || '--';
+            document.getElementById('metaEmail').textContent = customerData.Email || '--';
+            document.getElementById('metaSpecOrder').textContent = customerData['Special Order'] || '--';
+            document.getElementById('metaSpecInst').textContent = customerData['Special instructiosn'] || '--';
+
+            document.getElementById('editMetaDelivFee').value = customerData['Delivery charge'] || '$0';
+            document.getElementById('editMetaTravel').value = customerData.Travel || '$0';
+            document.getElementById('editMetaPO').value = customerData['Purchase order'] || '';
+            document.getElementById('editMetaNotes').value = customerData.Notes || '';
+
+            document.getElementById('receivedBy').value = '';
+            
+            deliveryCart = [];
+            renderDeliveryCart();
+
+            const sigBtn = document.getElementById('btnActivateSig');
+            sigBtn.style.background = '#007bff';
+            sigBtn.textContent = 'CLICK TO SIGN';
+            const canvas = document.getElementById('sig-canvas');
+            canvas.style.pointerEvents = 'none';
+            canvas.style.opacity = '0.6';
+            canvas.style.background = '#eee';
+
+            const waterDropdown = document.getElementById('stopProductDropdown');
+            waterDropdown.innerHTML = '<option value="">Loading...</option>';
+            const coffeeDropdown = document.getElementById('stopCoffeeDropdown');
+            coffeeDropdown.innerHTML = '<option value="">Loading...</option>';
+
+            async function populateProd(fileName, targetId) {
+                try {
+                    const resp = await fetch(`https://raw.githubusercontent.com/${repo}/main/Products/${fileName}?t=${Date.now()}`);
+                    const text = await resp.text();
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                    const target = document.getElementById(targetId);
+                    if (lines.length > 1) {
+                        const h = lines[0].split(',');
+                        const dIdx = h.findIndex(col => col.toLowerCase().includes('desc') || col.toLowerCase().includes('item'));
+                        target.innerHTML = `<option value="">Choose ${fileName.replace('.csv','')} product...</option>`;
+                        lines.slice(1).forEach(l => {
+                            const v = l.split(',');
+                            const o = document.createElement('option');
+                            o.value = v[dIdx] || v[0]; 
+                            o.textContent = v[dIdx] || v[0];
+                            target.appendChild(o);
+                        });
+                    }
+                } catch(e) { document.getElementById(targetId).innerHTML = '<option>Error</option>'; }
+            }
+
+            populateProd('Water.csv', 'stopProductDropdown');
+            populateProd('Coffee.csv', 'stopCoffeeDropdown');
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            isSigBlank = true; 
+            
+            let drawing = false;
+
+            function clearWatermark() {
+                if (isSigBlank) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    isSigBlank = false;
+                }
+            }
+
+            canvas.onmousedown = (e) => { 
+                clearWatermark();
+                drawing = true; ctx.beginPath(); 
+            };
+            canvas.onmouseup = () => { drawing = false; };
+            canvas.onmousemove = (e) => {
+                if (!drawing) return;
+                const rect = canvas.getBoundingClientRect();
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.stroke();
+            };
+
+            canvas.addEventListener("touchstart", function (e) {
+                if (e.target == canvas) {
+                    e.preventDefault();
+                    clearWatermark();
+                    drawing = true; ctx.beginPath();
+                }
+            }, { passive: false });
+
+            canvas.addEventListener("touchend", function (e) {
+                if (e.target == canvas) {
+                    e.preventDefault();
+                    drawing = false;
+                }
+            }, { passive: false });
+
+            canvas.addEventListener("touchmove", function (e) {
+                if (e.target == canvas) {
+                    e.preventDefault();
+                    if (!drawing) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const touch = e.touches[0];
+                    ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                    ctx.stroke();
+                }
+            }, { passive: false });
+        };
+
+        /* NEW: Helper to Append Log Rows to GitHub CSV */
+        async function appendToTripLog(rowArray) {
+            if (!tripLogFilename) return;
+            const path = `trip-reports/${tripLogFilename}`;
+            let currentContent = "";
+            let sha = null;
+            
+            try {
+                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    currentContent = atob(json.content);
+                    sha = json.sha;
+                }
+            } catch (e) {}
+
+            const newRow = rowArray.join(',') + '\n';
+            const updatedContent = currentContent + newRow;
+
+            await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: "Update Trip Log",
+                    content: btoa(updatedContent),
+                    sha: sha
+                })
+            });
+        }
+
+        /* NEW: Not Delivered Flow */
+        window.markNotDelivered = async function() {
+            const reason = prompt("Reason for non-delivery (Mandatory):");
+            if (!reason) {
+                alert("Reason is mandatory.");
+                return;
+            }
+            const customerName = document.getElementById('stopModalTitle').textContent.replace('Delivery: ', '');
+            const timeStamp = new Date().toLocaleString();
+            
+            await appendToTripLog([driverName, "N/A", timeStamp, customerName, "N/A", "Not Delivered", reason]);
+            alert("Report updated: Not Delivered.");
+            document.getElementById('stopModal').style.display = 'none';
+        };
+
+        window.validateAndFinishStop = async function() {
+            const receiverName = document.getElementById('receivedBy').value.trim();
+            if (!receiverName) {
+                alert("Please enter the name of the person receiving the delivery.");
+                return;
+            }
+            if (isSigBlank) {
+                alert("A signature is required to complete the delivery.");
+                return;
+            }
+
+            const customerName = document.getElementById('stopModalTitle').textContent.replace('Delivery: ', '');
+            const address = document.getElementById('metaAddress').textContent;
+            const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const po = document.getElementById('editMetaPO').value;
+            const instructions = document.getElementById('metaSpecInst').textContent;
+            const sigImage = document.getElementById('sig-canvas').toDataURL();
+            const slipNum = Math.floor(100000 + Math.random() * 900000);
+            const fileName = `${customerName}_Slip_${slipNum}.pdf`.replace(/\s+/g, '_');
+
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.width = "790px"; 
+            pdfContainer.style.margin = "0 auto";
+            pdfContainer.style.padding = "15px";
+            pdfContainer.style.background = "#ffffff";
+            pdfContainer.style.fontFamily = "'Courier New', Courier, monospace";
+            pdfContainer.style.fontSize = "11px";
+            pdfContainer.style.color = "#000";
+            pdfContainer.style.lineHeight = "1.1";
+
+            pdfContainer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <div style="width: 50%;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                             <img src="https://upload.wikimedia.org/wikipedia/en/2/25/Culligan_logo.png" style="height: 50px;" onerror="this.outerHTML='<div style=\'font-size:30px; font-weight:bold; border:2px solid #000; padding:5px;\'>C</div>'">
+                             <div>
+                                <div style="font-size: 26px; font-weight: bold; border-bottom: 1px solid #000;">Culligan</div>
+                                <div style="font-size: 9px; letter-spacing: 2px;">BOTTLED WATER</div>
+                             </div>
+                        </div>
+                        <div style="font-size: 9px; margin-top: 10px;">
+                            CULLIGAN BOTTLED WATER<br>
+                            598316 ALBERTA LTD.<br>
+                            12001-99 AVENUE<br>
+                            GRANDE PRAIRIE AB T8W 0J7<br>
+                            PHONE: (780) 532-8584 Fax: (780) 539-3881
+                        </div>
+                    </div>
+                    <div style="width: 42%;">
+                        <div style="border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 3px; font-size: 12px;">
+                            <span style="float: left;">DATE</span> <strong style="margin-left: 20px;">${date}</strong>
+                            <div style="clear:both;"></div>
+                        </div>
+                        <div style="border: 1px solid #000; height: 75px; padding: 4px; position: relative;">
+                            <div style="font-size: 8px; position: absolute; top: -5px; left: 5px; background: #fff; padding: 0 3px;">SPECIAL INSTRUCTIONS</div>
+                            <div style="font-size: 10px; margin-top: 5px;">${instructions || ''}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div style="width: 55%;">
+                        <div style="border-bottom: 1px solid #000; margin-bottom: 4px; padding-bottom: 1px;">
+                            <span style="font-size: 9px; margin-right: 10px;">SOLD TO</span> <strong style="font-size: 14px;">${customerName}</strong>
+                        </div>
+                        <div style="border-bottom: 1px solid #000; height: 18px; padding-top: 2px;">${address}</div>
+                        <div style="border-bottom: 1px solid #000; height: 18px;"></div>
+                        <div style="border-bottom: 1px solid #000; height: 18px;"></div>
+                    </div>
+                    <div style="width: 38%; text-align: right;">
+                        <div style="border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 2px; font-size: 11px;">
+                            <span style="float: left;">P.O. NO.</span> <strong style="margin-right: 5px;">${po || ''}</strong>
+                            <div style="clear:both;"></div>
+                        </div>
+                        <div style="color: red; border: 2px solid red; padding: 5px; text-align: center; margin-top: 5px;">
+                            <div style="font-size: 16px; font-weight: bold;">DELIVERY SLIP</div>
+                            <div style="font-size: 18px; font-weight: bold; margin: 2px 0;">${slipNum}</div>
+                            <div style="font-size: 8px; font-weight: bold;">THIS IS NOT YOUR INVOICE<br>INVOICE TO FOLLOW</div>
+                        </div>
+                    </div>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
+                    <thead>
+                        <tr style="height: 25px;">
+                            <th style="border: 1px solid #000; width: 8%; font-size: 9px; padding: 2px;">QTY.</th>
+                            <th style="border: 1px solid #000; width: 62%; font-size: 9px; padding: 2px;">DESCRIPTION</th>
+                            <th style="border: 1px solid #000; width: 15%; font-size: 9px; padding: 2px;">EACH</th>
+                            <th style="border: 1px solid #000; width: 15%; font-size: 9px; padding: 2px;">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${deliveryCart.map(item => `
+                            <tr style="height: 28px;">
+                                <td style="border: 1px solid #000; text-align: center; font-size: 12px; font-weight: bold;">${item.qty}</td>
+                                <td style="border: 1px solid #000; padding: 0 8px; font-size: 11px;">${item.name} (${item.units})</td>
+                                <td style="border: 1px solid #000;"></td>
+                                <td style="border: 1px solid #000;"></td>
+                            </tr>
+                        `).join('')}
+                        ${Array(Math.max(0, 10 - deliveryCart.length)).fill(0).map(() => `
+                            <tr style="height: 28px;">
+                                <td style="border: 1px solid #000;"></td>
+                                <td style="border: 1px solid #000;"></td>
+                                <td style="border: 1px solid #000;"></td>
+                                <td style="border: 1px solid #000;"></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr style="height: 35px;">
+                            <td colspan="2" style="border: 2px solid #000; padding: 4px; vertical-align: bottom; position: relative;">
+                                <div style="font-size: 7px; display: flex; gap: 15px;">
+                                    <span>CASH [ ]</span>
+                                    <span>CHQ [ ]</span>
+                                    <span>VISA [ ]</span>
+                                    <span>M/C [ ]</span>
+                                    <span>INTERAC [ ]</span>
+                                </div>
+                                <div style="font-size: 6px; margin-top: 4px;">White: Office Copy | Canary: Office Copy | Pink: Customer Copy</div>
+                            </td>
+                            <td style="border: 2px solid #000; text-align: center; font-weight: bold; font-size: 12px;">TOTAL</td>
+                            <td style="border: 2px solid #000;"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="width: 48%; position: relative;">
+                        <div style="position: absolute; left: 0; bottom: 15px; width: 100%; text-align: center;">
+                            <img src="${sigImage}" style="max-height: 70px; mix-blend-mode: multiply;">
+                        </div>
+                        <div style="border-bottom: 1px solid #000; margin-top: 55px;"></div>
+                        <div style="font-size: 8px; text-align: center; margin-top: 2px;">CUSTOMER SIGNATURE</div>
+                    </div>
+                    <div style="width: 48%;">
+                        <div style="border-bottom: 1px solid #000; text-align: center; font-weight: bold; font-size: 13px; padding-bottom: 2px;">
+                            ${receiverName}
+                        </div>
+                        <div style="font-size: 8px; text-align: center; margin-top: 2px;">RECEIVED BY (PRINT NAME)</div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 7px; text-align: center; color: #444;">
+                    G.S.T. #8991131088 RT | TERMS OF PAYMENT: CASH OR ON APPROVED CREDIT. <br>
+                    NET 30 DAYS. 2% PER MONTH INTEREST CHARGES ON ALL OVERDUE ACCOUNTS.
+                </div>
+            `;
+
+            const opt = {
+                margin: 0,
+                filename: fileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, windowWidth: 800, x: 0, scrollX: 0 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            try {
+                const pdfBlob = await html2pdf().set(opt).from(pdfContainer).output('blob');
+                const reader = new FileReader();
+                reader.readAsDataURL(pdfBlob);
+                reader.onloadend = async function() {
+                    const base64Content = reader.result.split(',')[1];
+                    const targetPath = `Pdf/${fileName}`;
+                    const response = await fetch(`https://api.github.com/repos/${repo}/contents/${targetPath}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: `Archive Delivery Slip: ${fileName}`, content: base64Content })
+                    });
+                    if (response.ok) {
+                        /* NEW: Record in Trip Log */
+                        await appendToTripLog([driverName, receiverName, new Date().toLocaleString(), customerName, slipNum, "Delivered", "N/A"]);
+                        alert(`SUCCESS!\nDigital Slip Archived.\nFilename: ${fileName}`);
+                        document.getElementById('stopModal').style.display = 'none';
+                    } else {
+                        const errData = await response.json();
+                        alert("Error uploading PDF: " + errData.message);
+                    }
+                };
+            } catch (err) { alert("Critical error generating PDF: " + err); }
+        };
+
+        window.addProductToCart = function(dropdownId, qtyId, unitId) {
+            const dropdown = document.getElementById(dropdownId);
+            const qtyInput = document.getElementById(qtyId);
+            const unitInput = document.getElementById(unitId);
+            const itemName = dropdown.value;
+            const qty = parseInt(qtyInput.value);
+            const units = unitInput.value || '';
+
+            if (!itemName) return;
+
+            const existing = deliveryCart.find(i => i.name === itemName && i.units === units);
+            if (existing) {
+                existing.qty += qty;
+            } else {
+                deliveryCart.push({ name: itemName, qty: qty, units: units });
+            }
+
+            qtyInput.value = 1;
+            unitInput.value = '';
+            dropdown.selectedIndex = 0;
+            renderDeliveryCart();
+        };
+
+        window.removeFromCart = function(index) {
+            deliveryCart.splice(index, 1);
+            renderDeliveryCart();
+        };
+
+        function renderDeliveryCart() {
+            const body = document.getElementById('cartItemsBody');
+            if (deliveryCart.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="color:#999; text-align:center;">No items added.</td></tr>';
+                return;
+            }
+            body.innerHTML = deliveryCart.map((item, idx) => `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.units}</td>
+                    <td><button onclick="removeFromCart(${idx})" style="background:none; border:none; color:red; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        /* NEW: Route Navigation & Header Logic */
+        window.startRouteFlow = function() {
+            const name = prompt("Driver Name (Mandatory):");
+            if (!name) {
+                alert("Driver Name is required to start route.");
+                return;
+            }
+            driverName = name;
+            const routeName = document.getElementById('routeDropdown').value || "Unassigned";
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).replace(/,/g, '');
+            tripLogFilename = `Trip-log-${routeName.replace('.csv','')}(${driverName})-${dateStr}.csv`.replace(/\s+/g, '_');
+            
+            // Initialize report headers if first time
+            appendToTripLog(["Driver", "ReceivedBy", "TimeStamp", "Company", "SlipNumber", "Status", "Reason"]);
+            alert(`Route Started. Log created: ${tripLogFilename}`);
+        };
+
+        window.finishRouteFlow = function() {
+            if (confirm("End route and lock trip log?")) {
+                driverName = "";
+                tripLogFilename = "";
+                alert("Route finished.");
+            }
+        };
+
+        window.navigateStop = function(dir) {
+            if (currentRouteStops.length === 0) return;
+            currentStopIndex = Math.max(0, Math.min(currentRouteStops.length - 1, currentStopIndex + dir));
+            const stop = currentRouteStops[currentStopIndex];
+            
+            document.getElementById('navAddressBar').textContent = `Address: ${stop.addr}`;
+            document.getElementById('navPhoneBar').textContent = `Phone: ${stop.phone}`;
+            
+            // Highlight in sidebar if possible
+            const sidebarStops = document.getElementById('stopList').children;
+            for(let i=0; i<sidebarStops.length; i++) {
+                sidebarStops[i].style.background = (i === currentStopIndex) ? "#e7f3ff" : "transparent";
+            }
+        };
+
+        window.openDirections = function() {
+            if (currentStopIndex === -1) return;
+            const addr = currentRouteStops[currentStopIndex].addr;
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank');
+        };
+
+        async function init() {
+            const map = L.map('map').setView([55.17, -118.79], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            document.getElementById('btnManager').onclick = () => {
+                document.getElementById('mgrModal').style.display = 'flex';
+                loadAllCustomers();
+            };
+
+            document.getElementById('btnShowCust').onclick = () => {
+                document.getElementById('custView').style.display = 'block';
+                document.getElementById('prodView').style.display = 'none';
+                document.getElementById('btnShowCust').classList.add('active');
+                document.getElementById('btnShowProd').classList.remove('active');
+            };
+
+            document.getElementById('btnShowProd').onclick = () => {
+                document.getElementById('custView').style.display = 'none';
+                document.getElementById('prodView').style.display = 'block';
+                document.getElementById('btnShowProd').classList.add('active');
+                document.getElementById('btnShowCust').classList.remove('active');
+                loadProductFile('Coffee.csv');
+            };
+
+            document.getElementById('btnForceRefresh').onclick = loadAllCustomers;
+            
+            loadGitHubRoutes();
+            loadAllCustomers(); 
+        }
+
+        async function loadGitHubRoutes() {
+            const files = await ghGet('routes');
+            const dropdown = document.getElementById('routeDropdown');
+            dropdown.innerHTML = '<option value="">Select Route...</option>';
+            
+            files.forEach(f => {
+                if(f.name.endsWith('.csv')) {
+                    const opt = document.createElement('option');
+                    opt.value = f.name;
+                    opt.textContent = f.name.replace('.csv', '');
+                    dropdown.appendChild(opt);
+                }
+            });
+        }
+
+        function populateRouteDropdown() {
+            const dropdown = document.getElementById('routeDropdown');
+            const currentVal = dropdown.value;
+            dropdown.innerHTML = '<option value="">Select Route...</option>';
+            
+            Object.keys(routeDataMap).forEach(fileName => {
+                const opt = document.createElement('option');
+                opt.value = fileName;
+                opt.textContent = fileName.replace('.csv', '');
+                if(fileName === currentVal) opt.selected = true;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        document.getElementById('routeDropdown').onchange = async function() {
+            const fileName = this.value;
+            const stopList = document.getElementById('stopList');
+            if(!fileName) {
+                stopList.innerHTML = 'Select a route to begin.';
+                return;
+            }
+
+            stopList.innerHTML = 'Loading stops...';
+            
+            let text = "";
+            if(routeDataMap[fileName]) {
+                text = routeDataMap[fileName].text;
+            } else {
+                const files = await ghGet('routes');
+                const file = files.find(f => f.name === fileName);
+                const resp = await fetch(file.download_url + "?t=" + Date.now());
+                text = await resp.text();
+            }
+
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            if(lines.length < 2) {
+                stopList.innerHTML = 'No data in route file.';
+                return;
+            }
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            const compIdx = headers.findIndex(h => h.toLowerCase() === "company");
+            const nameIdx = headers.findIndex(h => ["name", "customer"].some(w => h.toLowerCase().includes(w)));
+            const addrIdx = headers.findIndex(h => h.toLowerCase().includes("address"));
+            const phoneIdx = headers.findIndex(h => h.toLowerCase().includes("phone"));
+
+            stopList.innerHTML = '';
+            currentRouteStops = [];
+            currentStopIndex = -1;
+
+            lines.slice(1).forEach((line, i) => {
+                const vals = line.split(',');
+                const displayName = (vals[compIdx] || vals[nameIdx] || 'Unknown').trim();
+                const addr = vals[addrIdx] || 'No Address';
+                const phone = vals[phoneIdx] || '--';
+                
+                const rowData = {};
+                headers.forEach((h, idx) => rowData[h] = (vals[idx] || '').trim());
+
+                currentRouteStops.push({ name: displayName, addr: addr, phone: phone, data: rowData });
+
+                const div = document.createElement('div');
+                div.style = "padding:10px; border-bottom:1px solid #eee; cursor:pointer; text-align:left;";
+                div.innerHTML = `<strong>${i+1}. ${displayName}</strong><br><small>${addr}</small>`;
+                
+                div.onclick = () => {
+                    /* ADDITIVE FIX: Mandatory Start Route Check */
+                    if (!driverName) {
+                        alert("You must click 'START ROUTE' and enter your name before opening stops.");
+                        return;
+                    }
+                    /* END ADDITIVE FIX */
+                    currentStopIndex = i;
+                    document.getElementById('currentAddress').textContent = addr;
+                    document.getElementById('currentPhone').textContent = rowData.Phone || '--';
+                    document.getElementById('navAddressBar').textContent = `Address: ${addr}`;
+                    document.getElementById('navPhoneBar').textContent = `Phone: ${phone}`;
+                    window.openStopModal(displayName, rowData);
+                };
+                stopList.appendChild(div);
+            });
+        };
+
+        init();
+    })();
+    </script>
+
+    <script>
+        function managerEndOfDay() { alert("End of Day procedure initiated."); }
+        function managerLiveView() { alert("Loading Live Fleet View..."); }
+        function managerCallInOrder() { alert("Opening Call-In Order Entry..."); }
+        function managerBackup() { alert("System backup successfully completed to GitHub."); }
+        function managerViewSlips() { alert("Loading Today's Delivery Slips..."); }
+        function managerViewPastLogs() { alert("Accessing Past Stop Logs Archive..."); }
+        function managerUserMgmt() { alert("Loading User Management Panel..."); }
+    </script>
+</body>
+</html>

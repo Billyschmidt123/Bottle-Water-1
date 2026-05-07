@@ -1,0 +1,16 @@
+CustomerID,Week,Day,Company,Address,Location,Phone,Notes,Email,Delivery Fee,,,,Active
+29ecdaa4,week 3,THURSDAY,Company,Combined Address,,780-830-0474,Closet Front,,,,,,true
+f74948ff,week 3,THURSDAY,Red Deer Ironworks,10002 84 Avenue, Clairmont, AB T8X 5B1,,,Near Vending Machine,,,,true
+6679ba0b,week 3,THURSDAY,Northern Metallic Sales,8502 99 Street, Clairmont, AB T8V 0P2,,,Front,,,,true
+ddd3c7f8,week 3,THURSDAY,Steelhaus,9310 85 Avenue, Clairmont, AB T8X 5A1,,,Shop,,,,true
+04aa99f3,week 3,THURSDAY,Max Fuel,10702 79 Avenue, Clairmont, AB T8X 5B5,,,Office,,,,true
+d6a06e8d,week 3,THURSDAY,Dan's Oilfield,10602 79 Avenue, Clairmont, AB T8X 5B5,,,,,,,true
+f7eb9ec2,week 3,THURSDAY,Isolation Equipment,10222 79 Avenue, Clairmont, AB T8X 5B5,,,,,,,true
+29a9b7bd,week 3,THURSDAY,Triple Threat Diesel,7002 96 Street, Clairmont, AB T8X 4A3,,,Lunch Room,,,,true
+af80946e,week 3,THURSDAY,Force Inspection,10301 70 Avenue, Clairmont, AB T8X 4A1,,,,,,,true
+06bc0c98,,,UFA Farm Store,15602 101 St, Grande Prairie, AB T8X 0K7,,,,,Select standard fee,,true
+06fd40d6,,,Liberty Oilfield Services,9602-72 Ave Clairmont, AB T8X 5B3,,,,,[Route: week 3 > 3 thursday] [Day: Wednesday] Need Paper copy. Also delivery to GUN shop, Lab and E&P wireline,,true
+13ca017c,,,Enercorp Sand Solutions,10201-88 Ave Clairmont, AB T0H 0W0,,780-538-0037,,accountspayable@enercorp.net,[Route: week 3 > 3 thursday] [Day: Wednesday],,,true
+c42dde88,,,Fed Ex,101,6901-98 street Clairmont, AB T0H 0W0,,780-539-2378,,beverly.bancale@fedex.com,[Route: week 3 > 3 thursday] [Day: Wednesday],,true
+8b445cb7,,,Westmax Trucking,9214-85 Ave Clairmont AB T8X 0S9,,780-402-0760,,admin@westmaxtrucking.com,[Route: week 3 > 3 thursday] [Day: Wednesday],,,,true
+a4b12a4a,,,Ledcor Highways,8001-98 Street Clairmont, AB T0H 0W0,$17.00,780-933-5185,,APInquiries@ledcor.com,[Day: Tuesday],,,true

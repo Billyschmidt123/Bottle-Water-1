@@ -1,0 +1,40 @@
+/* CSS/map.css - LOGIFLOW RESTORED BUILD */
+
+/* 1. Ensure the map container remains relative and fills its allocated space */
+#map {
+    width: 100% !important;
+    height: 100% !important;
+    background: #ddd;
+    position: relative !important;
+    z-index: 1; 
+}
+
+/* 2. Ensure Leaflet uses the app's font style */
+.leaflet-container {
+    font: inherit;
+}
+
+/* 3. Map Control Positioning */
+.leaflet-top .leaflet-control {
+    margin-top: 10px;
+}
+
+/* 4. Fix for potential grey tiles */
+.leaflet-pane {
+    z-index: 2;
+}
+
+.leaflet-tile-container {
+    pointer-events: none;
+}
+
+/* [FIX ADDED]: PRESERVE ORIGINAL FLEX LOGIC FOR MAP PANEL */
+#mapPanel {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* 
+   NOTE: No existing styles were deleted. 
+   Additional relative positioning added to ensure map stays under the header.
+*/
