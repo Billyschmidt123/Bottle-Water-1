@@ -37,4 +37,3 @@ window.processCSV = function(csvText) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', initMap);
