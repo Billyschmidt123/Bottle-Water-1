@@ -2,80 +2,138 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LogiFlow Delivery System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiFlow Delivery</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <!-- CSS (rebuilt cleanly) -->
+    <link rel="stylesheet" href="CSS/main.css">
+    <link rel="stylesheet" href="CSS/map.css">
+    <link rel="stylesheet" href="CSS/manager.css">
+    <link rel="stylesheet" href="CSS/modal.css">
+    <link rel="stylesheet" href="CSS/theme.css">
+    <link rel="stylesheet" href="CSS/callinModal.css">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <style>
-        body { margin:0; padding:0; display:flex; height:100vh; overflow:hidden; }
-        #sidebar { width:260px; background:#f4f4f4; overflow-y:auto; border-right:1px solid #ccc; }
-        #map { flex:1; }
-        #modalContainer { position:fixed; top:0; left:0; width:100%; height:100%; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); z-index:9999; }
-        .sidebar-stop { padding:10px; border-bottom:1px solid #ddd; cursor:pointer; }
-        .active-stop { background:#d0ebff; }
-        .completed-stop { background:#c8f7c5; }
-    </style>
 </head>
 
 <body>
 
-    <!-- Sidebar -->
-    <div id="sidebar">
-        <button id="openManagerBtn" style="width:100%; padding:10px;">Manager Portal</button>
-        <button id="btnStartRoute" style="width:100%; padding:10px;">Start Route</button>
-        <button id="btnFinishRoute" style="width:100%; padding:10px;">Finish Route</button>
-
-        <div id="currentStopInfo" style="padding:10px; font-weight:bold;">No stop selected</div>
-
-        <button id="btnPrevStop" style="width:100%; padding:10px;">Previous Stop</button>
-        <button id="btnNextStop" style="width:100%; padding:10px;">Next Stop</button>
-        <button id="btnDirections" style="width:100%; padding:10px;">Directions</button>
-
-        <div id="sidebarStops"></div>
+<!-- HEADER (Option 1) -->
+<header>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <h1 style="margin:0; font-size:1.5rem;">LogiFlow Delivery</h1>
+        <select id="routeDropdown" class="btn-top" style="background:#0056b3;">
+            <option value="">Select Route</option>
+        </select>
     </div>
 
-    <!-- Map -->
+    <div style="display:flex; gap:10px;">
+        <button id="btnManager" class="btn-top" style="background:#6c757d;">Manager</button>
+        <button id="btnForceRefresh" class="btn-top" style="background:#17a2b8;">
+            <i class="fas fa-sync"></i>
+        </button>
+    </div>
+</header>
+
+<!-- DRIVER NAV BAR (RESTORED) -->
+<div class="driver-nav-bar">
+    <button id="btnStartRoute" class="btn-nav" style="background:#28a745;">START ROUTE</button>
+    <button id="btnFinishRoute" class="btn-nav" style="background:#dc3545;">FINISH</button>
+
+    <button class="btn-nav" style="background:#6f4e37;">
+        <i class="fas fa-directions"></i> DIRECTIONS
+    </button>
+
+    <div style="display:flex; gap:5px;">
+        <button class="btn-nav" style="background:#007bff;" onclick="navigateStop(-1)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="btn-nav" style="background:#007bff;" onclick="navigateStop(1)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- REQUIRED FOR UI.JS -->
+    <select id="routeDropdownMap" class="btn-top" style="background:#0056b3;">
+        <option value="">Select Route</option>
+    </select>
+
+    <div id="navAddressBar" class="info-bar">Address: ---</div>
+    <div id="navPhoneBar" class="info-bar" style="flex-grow:0; min-width:150px;">Phone: ---</div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-container">
     <div id="map"></div>
 
-    <!-- Modal -->
-    <div id="modalContainer"></div>
+    <div class="side-panel">
+        <h2 id="currentRouteTitle">Route</h2>
+        <div id="stopList"></div>
+    </div>
+</div>
 
-    <!-- AppState -->
-    <script>
-        window.appState = {
-            stops: [],
-            currentStopIndex: 0,
-            activeRoute: null
-        };
-    </script>
+<!-- MANAGER MODAL -->
+<div id="managerModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Manager Portal</h2>
+        <button id="btnAddCustomer" class="btn-top">Add Customer</button>
+        <button id="btnCallIn" class="btn-top">Call-In Order</button>
+        <button onclick="closeManagerModal()" class="btn-top" style="background:#dc3545;">Close</button>
+    </div>
+</div>
 
-    <!-- Scripts (ORDER MATTERS) -->
-    <script src="js/manager.js"></script>
-    <script src="js/navigation.js"></script>
-    <script src="js/ui.js"></script>
+<!-- NEW CUSTOMER MODAL -->
+<div id="newCustModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>New Customer</h2>
+        <div id="newCustFields"></div>
+        <button id="btnSaveNewCustomer" class="btn-top" style="background:#28a745;">Save</button>
+        <button onclick="closeNewCustomerModal()" class="btn-top" style="background:#dc3545;">Cancel</button>
+    </div>
+</div>
 
-    <!-- Initialize Map + Systems -->
-    <script>
-        // Initialize Leaflet map
-        window.map = L.map('map').setView([55.1707, -118.794], 12);
+<!-- EDIT CUSTOMER MODAL -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Edit Customer</h2>
+        <div id="editFields"></div>
+        <button id="btnSaveEdit" class="btn-top" style="background:#28a745;">Save</button>
+        <button onclick="closeEditModal()" class="btn-top" style="background:#dc3545;">Cancel</button>
+    </div>
+</div>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+<!-- CALL-IN MODAL -->
+<div id="callInModalOverlay" class="modal-overlay">
+    <div class="modal-content callin-modal">
+        <h2>Call-In Order</h2>
+        <div id="callinFields"></div>
+        <div id="callin_CartItems"></div>
+        <button id="btnCallInSave" class="btn-top" style="background:#28a745;">Save Order</button>
+        <button onclick="closeCallInModal()" class="btn-top" style="background:#dc3545;">Cancel</button>
+    </div>
+</div>
 
-        // Initialize modules
-        navigationInit();
-        uiInit();
+<!-- SCRIPT ORDER (CORRECTED) -->
+<script src="JS/core.js"></script>
+<script src="JS/loader.js"></script>
+<script src="JS/map.js"></script>
+<script src="JS/navigation.js"></script>
+<script src="JS/ui.js"></script>
+<script src="JS/manager.js"></script>
+<script src="JS/callin.js"></script>
+<script src="JS/callinModal.js"></script>
+<script src="JS/products.js"></script>
+<script src="JS/delivery.js"></script>
+<script src="JS/storage.js"></script>
+<script src="JS/split.js"></script>
 
-        // Load active route (if manager already selected one)
-        if (typeof loadActiveRouteForNavigation === "function") {
-            loadActiveRouteForNavigation();
-        }
-    </script>
+<!-- YOUR INLINE LOGIC MOVED HERE -->
+<script src="JS/app.js"></script>
 
 </body>
 </html>
