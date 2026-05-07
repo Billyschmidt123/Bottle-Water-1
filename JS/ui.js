@@ -149,7 +149,7 @@ function renderSidebarStops() {
         div.textContent = stop.company || stop.address || ("Stop " + (index + 1));
         div.dataset.index = index;
 
-        if (typeof isStopCompleted === "function" && isStopCompleted(stop)) {
+        if (stop.completed) {
             div.classList.add("completed-stop");
         }
 
@@ -296,32 +296,16 @@ function attachStopModalHandlers(index) {
             stop.waterProduct = waterSel ? waterSel.value : stop.waterProduct;
             stop.coffeeProduct = coffeeSel ? coffeeSel.value : stop.coffeeProduct;
 
-            if (typeof saveStopEdit === "function") {
-                saveStopEdit(stop, {
-                    email: stop.email,
-                    deliveryFee: stop.deliveryFee,
-                    travel: stop.travel,
-                    specialInstructions: stop.specialInstructions,
-                    receivedBy: stop.receivedBy,
-                    waterProduct: stop.waterProduct,
-                    coffeeProduct: stop.coffeeProduct
-                });
-            }
-
             if (signaturePad && signaturePad.hasDrawn()) {
-                const sigData = signaturePad.toDataURL();
-                if (typeof saveSignatureForStop === "function") {
-                    saveSignatureForStop(stop, sigData);
-                }
+                stop.signature = signaturePad.toDataURL();
             }
 
-            if (typeof markStopCompleted === "function") {
-                markStopCompleted(stop);
-            }
+            stop.completed = true;
+            stop.completedAt = new Date().toISOString();
 
+            saveRouteState();
+            updateStopMarker(stop);
             renderSidebarStops();
-            renderStopsOnMap();
-
             closeModal();
         });
         btnSave._bound = true;
@@ -329,9 +313,44 @@ function attachStopModalHandlers(index) {
 
     if (btnNotDelivered && !btnNotDelivered._bound) {
         btnNotDelivered.addEventListener("click", () => {
-            console.log("Marked as not delivered:", stop.company || stop.address);
+            stop.completed = false;
+            stop.notDelivered = true;
+            stop.completedAt = null;
+
+            saveRouteState();
+            updateStopMarker(stop);
+            renderSidebarStops();
             closeModal();
         });
         btnNotDelivered._bound = true;
     }
+}
+
+// ADD-ONLY: Save route state
+function saveRouteState() {
+    if (!window.currentRoute) return;
+    localStorage.setItem("routeData", JSON.stringify(window.currentRoute));
+}
+
+// ADD-ONLY: Update map for current stop
+function updateMapForCurrentStop() {
+    const idx = appState.currentStopIndex;
+    const stop = appState.stops[idx];
+    if (!stop || !stop.lat || !stop.lng) return;
+
+    if (window.map) {
+        map.setView([stop.lat, stop.lng], 15);
+    }
+}
+
+// ADD-ONLY: Update marker color
+function updateStopMarker(stop) {
+    if (!stop.marker) return;
+
+    const icon = L.icon({
+        iconUrl: stop.completed ? "assets/markers/green.png" : "assets/markers/red.png",
+        iconSize: [32, 32]
+    });
+
+    stop.marker.setIcon(icon);
 }
