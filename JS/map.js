@@ -35,5 +35,4 @@ window.processCSV = function(csvText) {
     if (markers.length > 0) {
         map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [50, 50] });
     }
-};
-
+};   // <-- REQUIRED CLOSING BRACE
