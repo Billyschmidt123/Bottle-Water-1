@@ -1046,6 +1046,9 @@
             const btn = document.getElementById('btnStartRoute');
             if (!btn) return;
             btn.addEventListener('click', async function() {
+    await saveCallInToGitHub();   // <-- waits for GitHub save to finish
+});
+
                 const routeFile = document.getElementById('routeDropdown').value;
                 if (!routeFile) return;
                 const callins = await loadCallInsForRoute(routeFile);
