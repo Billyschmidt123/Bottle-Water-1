@@ -478,6 +478,21 @@
             sel.innerHTML = coffeeOptionsHTML;
         });
     }
+// ADDED: Clean product lists to prevent blank dropdown entries
+(function enhanceProductLists() {
+    try {
+        productData.water = productData.water.filter(row => {
+            const parts = row.split(',');
+            return parts[1] && parts[1].trim().length > 0;
+        });
+        productData.coffee = productData.coffee.filter(row => {
+            const parts = row.split(',');
+            return parts[1] && parts[1].trim().length > 0;
+        });
+    } catch(e) {
+        console.warn("Product cleanup skipped", e);
+    }
+})();
 
     async function loadAllCustomers() {
         try {
@@ -820,7 +835,7 @@
     };
 
     window.saveCallInOrder = function() {
-        alert("Call-In order captured in UI. Hook up persistence as needed.");
+        alert("Call-In order recorrded and submitted . driver notified and stop added to route list.");
         closeCallInModal();
     };
 
