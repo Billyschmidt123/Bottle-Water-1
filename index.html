@@ -3,34 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Page - Bottle-Water-1</title>
+    <title>LogiFlow Delivery System</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #004a99;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-align: center;
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
+        header { background: #004a99; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 1; height: 100%; }
+        .side-panel { width: 350px; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; box-shadow: -2px 0 5px rgba(0,0,0,0.05); }
+        .panel-header { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
+        .stop-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .btn-top { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .driver-nav-bar { background: #e9ecef; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #dee2e6; }
+        .info-bar { background: #fff; border: 1px solid #ced4da; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; flex-grow: 1; color: #495057; }
+        .btn-nav { padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; }
+        .mgmt-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .mgmt-table th, .mgmt-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .mgmt-table th { background: #f8f9fa; position: sticky; top: 0; }
+        #newCustModal, #editModal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #004a99;
+            padding: 20px;
+            z-index: 3000;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
-        h1 {
-            font-size: 3rem;
-            margin: 0;
-        }
-        p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
+        #newCustModal { width: 90%; max-width: 900px; }
+        #editModal { width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.75rem; font-weight: bold; color: #004a99; }
+        .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .cart-box { border: 1px solid #ddd; background: #fdfdfd; padding: 10px; margin-top: 10px; border-radius: 4px; }
+        .route-stop-item:hover { background-color: #f0f7ff; }
     </style>
 </head>
 <body>
-    <div>
-        <h1>🚚 Bottle-Water-1</h1>
-        <p>GitHub Pages Test Banner Loaded Successfully</p>
+
+<header>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <h1 style="margin:0; font-size:1.5rem;">LogiFlow Delivery</h1>
+        <select id="routeDropdown" class="btn-top" style="background:#0056b3;"></select>
     </div>
-</body>
-</html>
+    <div style="display:flex; gap:10px;">
+        <button id="btnManager" class="btn-top" style="background:#6c757d;">Manager</button>
+        <button id="btnForceRefresh" class="btn-top" style="background:#17a2b8;"><i class="fas fa-sync"></i></button>
+    </div>
+</header>
+
+<div class="driver-nav-bar">
+    <button id="btnStartRoute" class="btn-nav" style="background: #28a745;">START ROUTE</button>
+    <button id="btnFinishRoute" class="btn-nav" style="background: #dc3545;">FINISH</button>
+    <button class="btn-nav" style="background: #6f4e37;"><i class="fas fa-directions"></i> DIRECTIONS</button>
+    <div style="display: flex; gap: 5px;">
+        <button class="btn-nav" style="background: #007bff;" onclick="navigateStop(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-nav" style="background: #007bff;" onclick="navigateStop(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div id="navAddressBar" class="info-bar">Address: ---</div>
+    <div id="navPhoneBar" class="info-bar" style="flex-grow: 0; min-width: 150px;">Phone: ---</div>
+</div>
+
+<div class="main-container">
+    <div id="map"></div>
+    <div class="side-panel">
+        <div class="panel-header">
+            <h3 id="currentRouteTitle" style="margin:0 0 10px 0;">Select a Route</h3>
+            <div style="font-size:0.9rem; color:#666;">
+                <span id="currentAddress">---</span><br>
+                <span id="currentPhone">---</span>
+            </div>
+        </div>
+        <div id="stopList" class="stop-list">
+            <p style="text-align:center; color:#999; margin-top:20px;">No route loaded.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Manager Modal -->
+<div id="mgrModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Manager Control Panel</h3>
+            <button class="btn-top" style="background:#dc3545;" onclick="document.getElementById('mgrModal').style.display='none'">Exit</button>
+        </div>
+        <hr>
+        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button class="btn-top" onclick="handleCustMaintClick()">Customer Maintenance</button>
+            <button class="btn-top" style="background:#6c757d;" onclick="managerProductMaint()">Product Maintenance</button>
+            <button class="btn-top" style="background:#6c757d;" onclick="managerEndOfDay()">End of Day</button>
+            <button class="btn-top" style="background:#6c757d;" onclick="managerLiveView()">Live View</button>
+            <button class="btn-top" onclick="managerCallInOrder()">Call in Order</button>
+            <button class="btn-top" style="background:#6c757d;">Back up</button>
+            <button class="btn-top" style="background:#6c757d;">View Slips</button>
+        </div>
+
+        <div style="background:#f1f1f1; padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <label>Filter Route: </label>
+                <select id="tableRouteFilter" onchange="renderCustTable()"></select>
+                <button class="btn-top" style="background:#28a745; margin-left:15px;" onclick="openNewCustomerModal()">+ New Customer</button>
+            </div>
+            <div id="tableStatus" style="font-weight:bold; color:#004a99;"></div>
+        </div>
+        
+        <div style="overflow-x:auto; margin-top:10px;">
+            <table class="mgmt-table">
+                <thead id="custTableHead"></thead>
+                <tbody id="custTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- New Customer Modal -->
+<div id="newCustModal">
+    <div style="background:#28a745; color:white; padding:10px; margin:-20px -20px 15px -20px; font-weight:bold;">Add New Customer Entry</div>
+    <div id="newCustFields" class="form-grid"></div>
+    <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn-top" style="background:#6c757d;" onclick="document.getElementById('newCustModal').style.display='none'">Cancel</button>
+        <button class="btn-top" style="background:#28a745;">Save New Customer</button>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="margin:0;">Edit Customer / Stop</h3>
+        <button class="btn-top" style="background:#dc3545;" onclick="document.getElementById('editModal').style.display='none'">Close</button>
+    </div>
+    <hr>
+
+    <div class="form-grid">
+        <div class="form-group"><label>CustomerID</label><input type="text" id="edit_CustomerID"></div>
+        <div class="form-group"><label>Week</label><input type="text" id="edit_Week"></div>
+        <div class="form-group"><label>Day</label><input type="text" id="edit_Day"></div>
+        <div class="form-group"><label>Company</label><input type="text" id="edit_Company"></div>
+        <div class="form-group"><label>Address</label><input type="text" id="edit_Address"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="edit_Location"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="edit_Phone"></div>
+        <div class="form-group"><label>Notes</label><input type="text" id="edit_Notes"></div>
+        <div class="form-group"><label>Email</label><input type="text" id="edit_Email"></div>
+        <div class="form-group"><label>Delivery Fee</label><input type="text" id="edit_DeliveryFee"></div>
+        <div class="form-group"><label>Special Order Item</label><input type="text" id="edit_SpecialOrderItem"></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="edit_Quantity" value="1" min="0"></div>
+        <div class="form-group">
+            <label>Active</label>
+            <select id="edit_Active"><option value="Yes">Yes</option><option value="No">No</option></select>
+        </div>
+        <div class="form-group">
+            <label>Target Route</label>
+            <select id="edit_TargetRoute"></select>
+        </div>
+    </div>
+
+    <hr style="margin:20px 0;">
+
+    <h4 style="margin: 0 0 10px 0; color: #004a99; border-bottom: 2px solid #004a99;">Water Selection</h4>
+    <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: end;">
+        <div class="form-group"><label>Water Product</label><select id="edit_WaterProduct" data-product-type="water"></select></div>
+        <div class="form-group"><label>Units</label><select id="edit_WaterUnits"><option>Bottles</option><option>Cases</option><option>Sleive</option><option>Box</option></select></div>
+        <div class="form-group"><label>Qty</label><input type="number" id="edit_WaterQty" value="1" min="0"></div>
+        <button class="btn-top" onclick="addItemToEditCart('water')">Add Water</button>
+    </div>
+
+    <h4 style="margin: 20px 0 10px 0; color: #004a99; border-bottom: 2px solid #004a99;">Coffee Selection</h4>
+    <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr auto; align-items: end;">
+        <div class="form-group"><label>Coffee Product</label><select id="edit_CoffeeProduct" data-product-type="coffee"></select></div>
+        <div class="form-group"><label>Units</label><select id="edit_CoffeeUnits"><option>Boxes</option><option>Cases</option><option>Sleive</option></select></div>
+        <div class="form-group"><label>Qty</label><input type="number" id="edit_CoffeeQty" value="1" min="0"></div>
+        <button class="btn-top" onclick="addItemToEditCart('coffee')">Add Coffee</button>
+    </div>
+
+    <div class="cart-box">
+        <strong>Order Cart:</strong>
+        <div id="edit_CartItems">No items yet.</div>
+    </div>
+
+    <div class="form-group" style="margin-top:10px;">
+        <label>Order Notes</label>
+        <input type="text" id="edit_OrderNotes">
+    </div>
+
+    <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn-top" style="background:#6c757d;" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+        <button id="btnSaveRecord" class="btn-top" style="background:#007bff;">Update Record</button>
+    </div>
+</div>
+
+<!-- CALL-IN MODAL -->
+<div id="callInModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">Call-In Order</h3>
+            <button class="btn-top" style="background:#dc3545;" onclick="closeCallInModal()">Close</button>
+        </div>
+        <hr>
+
+        <div class="form-grid">
+            <div class="form-group"><label>CustomerID</label><input type="text" id="callin_CustomerID"></div>
+            <div class="form-group"><label>Week</label><input type="text" id="callin_Week"></div>
+            <div class="form-group"><label>Day</label><input type="text" id="callin_Day"></div>
+            <div class="form-group"><label>Company</label><input type="text" id="callin_Company"></div>
+            <div class="form-group"><label>Address</label><input type="text" id="callin_Address"></div>
+            <div class="form-group"><label>Location</label><input type="text" id="callin_Location"></div>
+            <div class="form-group"><label>Phone</label><input type="text" id="callin_Phone"></div>
+            <div class="form-group"><label>Notes</label><input type="text" id="callin_Notes"></div>
+            <div class="form-group"><label>Email</label><input type="text" id="callin_Email"></div>
+            <div class="form-group"><label>Delivery Fee</label><input type="text" id="callin_DeliveryFee"></div>
+            <div class="form-group"><label>Special Order Item</label><input type="text" id="callin_SpecialOrderItem"></div>
