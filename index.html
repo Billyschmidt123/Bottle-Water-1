@@ -24,7 +24,6 @@
         .mgmt-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         .mgmt-table th, .mgmt-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
         .mgmt-table th { background: #f8f9fa; position: sticky; top: 0; }
-
         #newCustModal {
             display: none;
             position: fixed;
@@ -348,6 +347,11 @@
                 <label>Target Route</label>
                 <select id="callin_TargetRoute"></select>
             </div>
+            <!-- ADDED: DELIVERY DATE FIELD FOR CALL-IN (MERGED SYSTEM) -->
+            <div class="form-group">
+                <label>Delivery Date (ISO)</label>
+                <input type="date" id="callin_DeliveryDate">
+            </div>
         </div>
 
         <hr style="margin:20px 0;">
@@ -520,7 +524,6 @@
         document.getElementById('tableStatus').innerText = `Displaying ${Math.min(filtered.length, 100)} of ${filtered.length}`;
     };
 
-    // MAPPING HELPERS FOR EDIT MODAL
     function findHeader(possibleNames) {
         for (const name of possibleNames) {
             const h = csvHeaders.find(h => h.toLowerCase() === name.toLowerCase());
@@ -738,7 +741,7 @@
         }, 500);
     });
 
-    // CALL-IN MODULE LOGIC
+    // CALL-IN MODULE LOGIC (UNCHANGED BEHAVIOR)
     window.managerCallInOrder = function() {
         const overlay = document.getElementById('callInModalOverlay');
         if (!overlay) return;
@@ -746,7 +749,7 @@
         [
             'callin_CustomerID','callin_Week','callin_Day','callin_Company','callin_Address',
             'callin_Location','callin_Phone','callin_Notes','callin_Email','callin_DeliveryFee',
-            'callin_SpecialOrderItem','callin_Quantity','callin_OrderNotes'
+            'callin_SpecialOrderItem','callin_Quantity','callin_OrderNotes','callin_DeliveryDate'
         ].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
@@ -832,6 +835,223 @@
             alert("Please wait for customer data to load headers.");
         }
     };
+
+    // ============================================================
+    // MERGED CALL-IN SYSTEM (ADDED CODE - NON-DESTRUCTIVE)
+    // ============================================================
+
+    function getTodayISO() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function buildCallInFileName(routeFile, dateStr) {
+        // Store in /routes/ as Callin-YYYY-MM-DD-<routeFile>.csv
+        return `routes/Callin-${dateStr}-${routeFile}`;
+    }
+
+    function collectCallInPayload() {
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? (el.value || '') : '';
+        };
+
+        const payload = {
+            CustomerID: getVal('callin_CustomerID'),
+            Week: getVal('callin_Week'),
+            Day: getVal('callin_Day'),
+            Company: getVal('callin_Company'),
+            Address: getVal('callin_Address'),
+            Location: getVal('callin_Location'),
+            Phone: getVal('callin_Phone'),
+            Notes: getVal('callin_Notes'),
+            Email: getVal('callin_Email'),
+            DeliveryFee: getVal('callin_DeliveryFee'),
+            SpecialOrderItem: getVal('callin_SpecialOrderItem'),
+            Quantity: getVal('callin_Quantity'),
+            Active: getVal('callin_Active') || 'Yes',
+            TargetRoute: getVal('callin_TargetRoute'),
+            DeliveryDate: getVal('callin_DeliveryDate') || getTodayISO(),
+            OrderNotes: getVal('callin_OrderNotes'),
+            CartItems: (tempCart || []).join(' | ')
+        };
+
+        return payload;
+    }
+
+    async function saveCallInToGitHub() {
+        try {
+            const payload = collectCallInPayload();
+            if (!payload.TargetRoute) {
+                console.warn("No target route selected for call-in.");
+                return;
+            }
+
+            const dateStr = payload.DeliveryDate || getTodayISO();
+            const filePath = buildCallInFileName(payload.TargetRoute, dateStr);
+
+            if (!csvHeaders || csvHeaders.length === 0) {
+                console.warn("csvHeaders not initialized; call-in file will not be written.");
+                return;
+            }
+
+            const headerLine = csvHeaders.join(',');
+            const rowVals = csvHeaders.map(h => {
+                const key = h.trim();
+                const lower = key.toLowerCase();
+                if (lower.includes('customerid')) return payload.CustomerID;
+                if (lower === 'week') return payload.Week;
+                if (lower === 'day') return payload.Day;
+                if (lower.includes('company')) return payload.Company;
+                if (lower === 'address') return payload.Address;
+                if (lower === 'location') return payload.Location;
+                if (lower.startsWith('phone')) return payload.Phone;
+                if (lower.startsWith('email')) return payload.Email;
+                if (lower.includes('delivery fee')) return payload.DeliveryFee;
+                if (lower.includes('special order')) return payload.SpecialOrderItem;
+                if (lower === 'quantity' || lower === 'qty') return payload.Quantity;
+                if (lower === 'active') return payload.Active;
+                if (lower === 'route' || lower === 'target route' || lower === '__route') return payload.TargetRoute;
+                if (lower.includes('note')) return (payload.OrderNotes || '') + (payload.CartItems ? ` | CART: ${payload.CartItems}` : '');
+                return '';
+            });
+
+            const csvText = headerLine + '\n' + rowVals.join(',');
+
+            const contentBase64 = btoa(unescape(encodeURIComponent(csvText)));
+
+            await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Add call-in for ${payload.TargetRoute} on ${dateStr}`,
+                    content: contentBase64
+                })
+            });
+        } catch (e) {
+            console.error("Failed to save call-in to GitHub", e);
+        }
+    }
+
+    function enhanceCallInSaveButton() {
+        try {
+            const overlay = document.getElementById('callInModalOverlay');
+            if (!overlay) return;
+            const buttons = overlay.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent && btn.textContent.toLowerCase().includes('save order')) {
+                    btn.addEventListener('click', function() {
+                        // ORIGINAL INLINE onclick still calls saveCallInOrder()
+                        // This additive handler persists the call-in to GitHub.
+                        saveCallInToGitHub();
+                    });
+                }
+            });
+        } catch (e) {
+            console.warn("Could not enhance call-in save button", e);
+        }
+    }
+
+    async function loadCallInsForRoute(routeFile) {
+        const results = [];
+        try {
+            const today = getTodayISO();
+            const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (!r.ok) return results;
+            const files = await r.json();
+            const prefix = `Callin-${today}-`;
+            const matches = files.filter(f => f.name.startsWith(prefix) && f.name.endsWith('.csv') && f.name.includes(routeFile));
+
+            for (let f of matches) {
+                const text = await (await fetch(f.download_url + "?t=" + Date.now())).text();
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                if (!lines.length) continue;
+                const headers = lines[0].split(',').map(h => h.trim());
+                lines.slice(1).forEach(line => {
+                    const vals = line.split(',');
+                    let rowObj = { "__route": routeFile, "__callin": true };
+                    headers.forEach((h, i) => rowObj[h] = (vals[i] || "").trim());
+                    results.push(rowObj);
+                });
+            }
+        } catch (e) {
+            console.error("Error loading call-ins", e);
+        }
+        return results;
+    }
+
+    function injectCallInsIntoRoute(routeFile, callins) {
+        if (!callins || !callins.length) return;
+        callins.forEach(ci => {
+            globalCustomers.push(ci);
+        });
+    }
+
+    function refreshStopListForRoute(routeFile) {
+        const filteredStops = globalCustomers.filter(c => c.__route === routeFile);
+        const stopListEl = document.getElementById('stopList');
+        if (!stopListEl) return;
+        stopListEl.innerHTML = filteredStops.map((s, idx) => {
+            const globalIdx = globalCustomers.indexOf(s);
+            const displayName = s['Company Name'] || s['Company'] || s['Customer Name'] || 'Unnamed Stop';
+            const isCallIn = s.__callin ? ' (CALL-IN)' : '';
+            return `
+                <div class="route-stop-item" 
+                     onclick="window.selectAndEditStop(${globalIdx}, ${idx}, '${routeFile}')"
+                     style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                    <strong>${idx + 1}. ${displayName}${isCallIn}</strong><br>
+                    <small style="color:#666;">${s['Address'] || 'No Address'}</small>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function flashCallInBanner() {
+        const titleEl = document.getElementById('currentRouteTitle');
+        if (!titleEl) return;
+        const original = titleEl.innerText;
+        titleEl.innerText = original + '  ⚠ CALL-IN ORDERS LOADED';
+        titleEl.style.color = '#d9534f';
+        setTimeout(() => {
+            titleEl.innerText = original;
+            titleEl.style.color = '';
+        }, 4000);
+    }
+
+    function enhanceStartRouteForCallIns() {
+        try {
+            const btn = document.getElementById('btnStartRoute');
+            if (!btn) return;
+            btn.addEventListener('click', async function() {
+                const routeFile = document.getElementById('routeDropdown').value;
+                if (!routeFile) return;
+                const callins = await loadCallInsForRoute(routeFile);
+                if (callins && callins.length) {
+                    injectCallInsIntoRoute(routeFile, callins);
+                    refreshStopListForRoute(routeFile);
+                    flashCallInBanner();
+                }
+            });
+        } catch (e) {
+            console.warn("Could not enhance start route for call-ins", e);
+        }
+    }
+
+    // INIT ADDED MERGED CALL-IN SYSTEM
+    enhanceCallInSaveButton();
+    enhanceStartRouteForCallIns();
+
+    // ============================================================
+    // END MERGED CALL-IN SYSTEM (ADDED CODE)
+    // ============================================================
 
 })();
 </script>
