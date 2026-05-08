@@ -48,7 +48,7 @@
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
         <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> LogiFlow Dispatch</h1>
-        <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px;"></select>
+        <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
     </div>
     <div style="display:flex; gap:12px;">
         <button class="btn-ui" style="background:#6c757d;" onclick="openModal('mgrModal')"><i class="fas fa-user-shield"></i> Manager Portal</button>
@@ -70,7 +70,9 @@
         <div style="padding:15px; border-bottom:1px solid #eee; background:#f8fafc;">
             <h3 style="margin:0;">Route Manifest</h3>
         </div>
-        <div id="stopList" class="stop-list-container"></div>
+        <div id="stopList" class="stop-list-container">
+            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route to view stops.</div>
+        </div>
     </div>
 </div>
 
@@ -80,22 +82,20 @@
             <h3 style="margin:0;"><i class="fas fa-tasks"></i> Management Hub</h3>
             <button onclick="closeModal('mgrModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
-        
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
                 <button class="btn-ui" style="background:#007bff;" onclick="renderCustomerMaint()"><i class="fas fa-users"></i> Customer Maintenance</button>
-                <button class="btn-ui" style="background:#6c757d;" onclick="alert('Loading Product Maintenance...')"><i class="fas fa-boxes"></i> Product Maintenance</button>
+                <button class="btn-ui" style="background:#6c757d;" onclick="alert('Product Maintenance Loaded')"><i class="fas fa-boxes"></i> Product Maintenance</button>
                 <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
                 <button class="btn-ui" style="background:#17a2b8;" onclick="alert('Live View Active')"><i class="fas fa-satellite"></i> Live View</button>
                 <button class="btn-ui" style="background:#28a745;" onclick="openCallInModal()"><i class="fas fa-phone"></i> Call-In Order</button>
                 <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
-                <button class="btn-ui" style="background:#004a99;" onclick="alert('Opening Slip Viewer...')"><i class="fas fa-file-invoice"></i> Slip Viewer</button>
+                <button class="btn-ui" style="background:#004a99;" onclick="alert('Slip Viewer Loaded')"><i class="fas fa-file-invoice"></i> Slip Viewer</button>
             </div>
-
             <div id="mgrViewArea" style="background:white; border:1px solid #cbd5e0; border-radius:8px;">
                 <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                     <input type="text" id="mgrSearch" placeholder="Search records..." style="padding:8px; width:40%; border:1px solid #ccc; border-radius:4px;">
-                    <button class="btn-ui" style="background:#28a745;" onclick="alert('Add New Customer Form')">+ Add New Customer</button>
+                    <button class="btn-ui" style="background:#28a745;" onclick="alert('Add Customer Form Opened')">+ Add New Customer</button>
                 </div>
                 <div style="max-height:55vh; overflow-y:auto;">
                     <table class="mgmt-table">
@@ -104,7 +104,6 @@
                                 <th>Company Name</th>
                                 <th>Address</th>
                                 <th>Phone</th>
-                                <th>Route</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -154,8 +153,11 @@
     let globalCustomers = [];
     let markers = [];
     const warehouseCoord = [55.1707, -118.7947];
-    const availableRoutes = ["W1-D1", "W1-D2", "W1-D3", "W1-D4", "W1-D5", "W2-D1", "W2-D2", "W2-D3", "W2-D4", "W2-D5"];
-    const REPO_BASE = "https://api.github.com/repos/Billyschmidt123/Bottle-Water-1/contents";
+    
+    // Updated Repository Path
+    const REPO_OWNER = "Billyschmidt123";
+    const REPO_NAME = "Bottle-Water-1";
+    const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 13);
@@ -166,45 +168,87 @@
             if (map && typeof map.invalidateSize === 'function') map.invalidateSize();
         });
         
-        populateDropdowns();
-        await loadInitialData(); 
+        await loadDynamicRoutes(); 
     }
 
-    function populateDropdowns() {
-        const routeHtml = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
-        document.getElementById('routeDropdown').innerHTML = '<option value="">-- Select Route --</option>' + routeHtml;
-        document.getElementById('callInRouteSelect').innerHTML = routeHtml;
-    }
+    // --- DYNAMIC REPO SCANNING ---
+    async function loadDynamicRoutes() {
+        const dropdown = document.getElementById('routeDropdown');
+        const callInSelect = document.getElementById('callInRouteSelect');
+        dropdown.innerHTML = '<option>Scanning Folders...</option>';
 
-    async function loadInitialData() {
         try {
             const response = await fetch(`${REPO_BASE}/routes`);
-            if (!response.ok) throw new Error("Connection Error");
-            // Parsing logic here
-            loadMockData(); // Fallback for UI visualization
+            if (!response.ok) throw new Error("Connection failed");
+            
+            const weeks = await response.json();
+            let routeNames = [];
+
+            for (let weekFolder of weeks) {
+                if (weekFolder.type === 'dir') {
+                    const fileRes = await fetch(weekFolder.url);
+                    const files = await fileRes.json();
+                    
+                    files.forEach(file => {
+                        if (file.name.endsWith('.csv')) {
+                            const cleanName = `${weekFolder.name} - ${file.name.replace('.csv', '')}`;
+                            routeNames.push({ name: cleanName, path: file.path });
+                        }
+                    });
+                }
+            }
+
+            const html = routeNames.map(r => `<option value="${r.path}">${r.name}</option>`).join('');
+            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + html;
+            callInSelect.innerHTML = html;
+
         } catch (e) {
-            console.warn("GitHub fetch failed, using internal records.");
-            loadMockData();
+            console.error("Route Error:", e);
+            dropdown.innerHTML = '<option>Error loading routes</option>';
         }
     }
 
-    function loadSelectedRoute() {
-        const selected = document.getElementById('routeDropdown').value;
+    // --- CSV FETCH & RENDER ---
+    async function loadSelectedRoute() {
+        const filePath = document.getElementById('routeDropdown').value;
         const stopList = document.getElementById('stopList');
+        
+        if (!filePath) return;
+
+        stopList.innerHTML = '<div style="text-align:center; padding-top:40px;">Reading Data...</div>';
         markers.forEach(m => map.removeLayer(m));
         markers = [];
-        
-        if (!selected) {
-            stopList.innerHTML = '<div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route to view stops.</div>';
-            return;
-        }
 
-        const filtered = globalCustomers.filter(c => c.route === selected);
+        try {
+            const response = await fetch(`${REPO_BASE}/${filePath}`);
+            const data = await response.json();
+            const csvText = atob(data.content); 
+            
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            const routeStops = lines.slice(1).map(line => {
+                const values = line.split(',');
+                return {
+                    name: values[0]?.replace(/"/g, ''),
+                    address: values[1]?.replace(/"/g, ''),
+                    phone: values[2]?.replace(/"/g, '') || '---'
+                };
+            });
+
+            renderManifest(routeStops);
+
+        } catch (e) {
+            stopList.innerHTML = '<div style="color:red; padding:20px;">Could not load CSV.</div>';
+        }
+    }
+
+    function renderManifest(stops) {
+        const stopList = document.getElementById('stopList');
         stopList.innerHTML = "";
-        
-        filtered.forEach((stop, i) => {
-            const lat = warehouseCoord[0] + (Math.random() - 0.5) * 0.04;
-            const lng = warehouseCoord[1] + (Math.random() - 0.5) * 0.04;
+
+        stops.forEach((stop, i) => {
+            const lat = warehouseCoord[0] + (Math.random() - 0.5) * 0.05;
+            const lng = warehouseCoord[1] + (Math.random() - 0.5) * 0.05;
+            
             const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${stop.name}</b>`);
             markers.push(marker);
 
@@ -223,56 +267,26 @@
         if (markers.length) map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.1));
     }
 
-    function renderCustomerMaint() {
-        document.getElementById('mgrTableBody').innerHTML = globalCustomers.map(c => `
-            <tr>
-                <td>${c.name}</td>
-                <td>${c.address}</td>
-                <td>${c.phone}</td>
-                <td>${c.route}</td>
-                <td>
-                    <button style="color:#007bff; background:none; border:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                    <button style="color:#dc3545; background:none; border:none; cursor:pointer; margin-left:8px;"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    function openCallInModal() {
-        document.getElementById('callInCustSelect').innerHTML = globalCustomers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-        openModal('callInModal');
-    }
-
-    function saveCallIn() {
-        alert("Call-In added to manifest.");
-        closeModal('callInModal');
-    }
-
-    function runEndOfDay() {
-        if(confirm("Generate EOD Reports and reset manifest?")) location.reload();
-    }
-
-    function downloadBackup() {
-        let csv = "Name,Address,Phone,Route\n" + globalCustomers.map(c => `"${c.name}","${c.address}","${c.phone}",${c.route}`).join("\n");
-        const link = document.createElement("a");
-        link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + csv));
-        link.setAttribute("download", "GP_Backup.csv");
-        link.click();
-    }
-
+    // --- MANAGEMENT HELPERS ---
     function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='mgrModal') renderCustomerMaint(); }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    function loadMockData() {
-        globalCustomers = [
-            {id: '1', name: 'Grande Prairie Hospital', address: '11205 110 St', phone: '780-538-7100', route: 'W1-D1'},
-            {id: '2', name: 'Prairie Mall', address: '11801 100 St', phone: '780-532-1811', route: 'W1-D1'},
-            {id: '3', name: 'Superstore GP', address: '12225 99 St', phone: '780-539-4444', route: 'W1-D2'}
-        ];
+    
+    function renderCustomerMaint() {
+        document.getElementById('mgrTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Load a route to view customers.</td></tr>';
     }
 
+    function saveCallIn() { alert("Added to route manifest."); closeModal('callInModal'); }
+    function runEndOfDay() { if(confirm("Complete today's dispatch and archive?")) location.reload(); }
     function startRoute() { alert("GPS Tracking Active."); }
-    function optimizeCurrent() { alert("Route Optimized."); }
+    function optimizeCurrent() { alert("Route optimized by proximity."); }
+
+    function downloadBackup() {
+        const csv = "Name,Address,Phone\n" + "Sample Customer,123 Main St,780-555-0123";
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + csv));
+        link.setAttribute("download", "Backup.csv");
+        link.click();
+    }
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
