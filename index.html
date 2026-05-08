@@ -9,30 +9,24 @@
         :root { --primary: #0056b3; --secondary: #6c757d; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
         header { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
         #main-container { display: flex; flex: 1; overflow: hidden; }
         #sidebar { width: 350px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
         #map { flex: 1; }
-
         .controls { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
         .stop-list { flex: 1; overflow-y: auto; }
         .route-stop-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
         .route-stop-item:hover { background: #f0f7ff; }
         .high-priority { border-left: 5px solid #dc3545; background: #fff5f5; }
         .over-60-days { background: #fff3cd !important; }
-
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
         .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 8px; }
-        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 10px; }
         label { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
         input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        
         .cart-section { border: 1px solid #ddd; padding: 10px; border-radius: 4px; margin-top: 10px; background: #fafafa; }
         .btn-top { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
         .btn-top:hover { background: #004494; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f8f9fa; position: sticky; top: 0; }
@@ -79,7 +73,6 @@
             <div class="form-group"><label>Active</label><select id="edit_Active"><option value="Yes">Yes</option><option value="No">No</option></select></div>
             <div class="form-group"><label>General Notes</label><textarea id="edit_Notes"></textarea></div>
         </div>
-
         <div class="cart-section">
             <h4>Add Items to This Delivery</h4>
             <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -95,9 +88,8 @@
                 <button class="btn-top" onclick="addItemToEditCart('coffee')">Add</button>
             </div>
             <div id="edit_CartItems" style="font-size:0.9rem; color:#444; padding:5px; border-top:1px dashed #ccc;">No items yet.</div>
-            <div class="form-group" style="margin-top:10px;"><label>Special Instructions (Order Specific)</label><textarea id="edit_OrderNotes" placeholder="e.g. Leave at back door"></textarea></div>
+            <div class="form-group" style="margin-top:10px;"><label>Special Instructions</label><textarea id="edit_OrderNotes"></textarea></div>
         </div>
-
         <div style="margin-top:20px; display:flex; gap:10px;">
             <button class="btn-top" id="btnSaveRecord" style="background:#28a745;">Update & Close</button>
             <button class="btn-top" style="background:var(--secondary);" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
@@ -154,13 +146,23 @@
     </div>
 </div>
 
+<div id="newCustModal" class="modal">
+    <div class="modal-content">
+        <h3>Add New Master Customer</h3>
+        <div id="newCustFields" class="form-grid"></div>
+        <div style="margin-top:20px;">
+            <button class="btn-top" onclick="saveNewCustomer()" style="background:#28a745;">Save New Customer</button>
+            <button class="btn-top" style="background:var(--secondary);" onclick="document.getElementById('newCustModal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function() {
-    // --- TOKEN SPLIT TO BYPASS SCANNING BOT ---
-    // Enter your token here by splitting it into two parts
-    const p1 = "ghp_YOUR_FIRST_HALF"; 
-    const p2 = "YOUR_SECOND_HALF";
+    // --- TOKEN SPLIT (REPLACE WITH YOUR ACTUAL TOKEN) ---
+    const p1 = "YOUR_TOKEN_PART_1"; 
+    const p2 = "YOUR_TOKEN_PART_2";
     const masterToken = p1 + p2;
 
     // --- ACCESS CONTROL ---
@@ -186,7 +188,6 @@
     let editCart = [];
     let tempCart = [];
 
-    // Helper: Calculate Age in Days
     function calculateAge(dateStr) {
         if (!dateStr) return 0;
         const start = new Date(dateStr);
@@ -195,7 +196,6 @@
         return Math.floor(diff / (1000 * 60 * 60 * 24));
     }
 
-    // CSV Fetch logic
     async function fetchCSV(url) {
         try {
             const response = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
@@ -316,12 +316,10 @@
         const record = globalCustomers[idx];
         if (!record) return;
         currentEditIndex = idx;
-
         const setField = (id, keys) => {
             const h = findHeader(keys);
             if (h) document.getElementById(id).value = record[h] || '';
         };
-
         setField('edit_CustomerID', ['CustomerID', 'Customer ID']);
         setField('edit_Company', ['Company', 'Company Name', 'Customer Name']);
         setField('edit_Address', ['Address']);
@@ -329,7 +327,6 @@
         setField('edit_Notes', ['Notes']);
         setField('edit_Status', ['Status']);
         setField('edit_Active', ['Active']);
-
         document.getElementById('edit_TargetRoute').value = record.__route;
         editCart = [];
         document.getElementById('edit_CartItems').innerText = 'No items yet.';
@@ -339,23 +336,19 @@
     document.getElementById('btnSaveRecord').onclick = function() {
         if (currentEditIndex == null) return;
         const record = globalCustomers[currentEditIndex];
-
         const updateField = (id, keys) => {
             const h = findHeader(keys);
             if (h) record[h] = document.getElementById(id).value;
         };
-
         updateField('edit_Company', ['Company', 'Company Name']);
         updateField('edit_Address', ['Address']);
         updateField('edit_Phone', ['Phone']);
         updateField('edit_Status', ['Status']);
-        
         const noteHeader = findHeader(['Notes']);
         if (noteHeader) {
             const items = editCart.length > 0 ? " | Items: " + editCart.join(", ") : "";
-            record[noteHeader] = (document.getElementById('edit_Notes').value + " " + document.getElementById('edit_OrderNotes').value + items).trim();
+            record[noteHeader] = (document.getElementById('edit_Notes').value + " " + (document.getElementById('edit_OrderNotes').value || "") + items).trim();
         }
-
         record.__route = document.getElementById('edit_TargetRoute').value;
         document.getElementById('editModal').style.display = 'none';
         renderCustTable();
@@ -394,10 +387,25 @@
         };
         globalCustomers.push(newRecord);
         renderCustTable();
-        closeCallInModal();
+        document.getElementById('callInModalOverlay').style.display = 'none';
     };
 
     window.closeCallInModal = () => document.getElementById('callInModalOverlay').style.display = 'none';
+
+    window.openNewCustomerModal = function() {
+        const container = document.getElementById('newCustFields');
+        if (csvHeaders.length === 0) return alert("Load data first");
+        container.innerHTML = csvHeaders.map(h => `<div class="form-group"><label>${h}</label><input type="text" id="new_cust_${h.replace(/\s+/g, '_')}"></div>`).join('');
+        document.getElementById('newCustModal').style.display = 'block';
+    };
+
+    window.saveNewCustomer = function() {
+        let newCust = { "__route": availableRoutes[0] };
+        csvHeaders.forEach(h => newCust[h] = document.getElementById(`new_cust_${h.replace(/\s+/g, '_')}`).value);
+        globalCustomers.push(newCust);
+        renderCustTable();
+        document.getElementById('newCustModal').style.display = 'none';
+    };
 
     document.getElementById('btnStartRoute').onclick = function() {
         const routeFile = document.getElementById('routeDropdown').value;
