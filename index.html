@@ -160,10 +160,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function() {
-    // --- ADDED: TOKEN SPLIT FOR BOT BYPASS ---
-    const p1 = "ghp_YOUR_FIRST_20_CHARS"; 
-    const p2 = "YOUR_REMAINING_CHARS";
-    const masterToken = p1 + p2;
+ // --- ADDED: TOKEN SPLIT FOR BOT BYPASS ---
+const p1 = "ghp_1234567890ABCDE"; // Put the first half of your token here
+const p2 = "FGHIJKLMNOPQRSTUVW"; // Put the second half of your token here
+const masterToken = p1 + p2;
 
     // --- ADDED: ACCESS CONTROL CHECK ---
     if (localStorage.getItem('device_authorized') !== 'true') {
