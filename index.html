@@ -9,22 +9,30 @@
         :root { --primary: #0056b3; --secondary: #6c757d; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
         header { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
         #main-container { display: flex; flex: 1; overflow: hidden; }
         #sidebar { width: 350px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
         #map { flex: 1; }
+
         .controls { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
         .stop-list { flex: 1; overflow-y: auto; }
         .route-stop-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
         .route-stop-item:hover { background: #f0f7ff; }
+        .high-priority { border-left: 5px solid #dc3545; background: #fff5f5; }
+        .over-60-days { background: #fff3cd !important; }
+
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
         .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 8px; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 10px; }
         label { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
         input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
         .cart-section { border: 1px solid #ddd; padding: 10px; border-radius: 4px; margin-top: 10px; background: #fafafa; }
         .btn-top { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
         .btn-top:hover { background: #004494; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f8f9fa; position: sticky; top: 0; }
@@ -62,13 +70,16 @@
     <div class="modal-content">
         <h3>Edit Delivery Details</h3>
         <div class="form-grid">
+            <div class="form-group"><label>CustomerID</label><input type="text" id="edit_CustomerID" readonly></div>
             <div class="form-group"><label>Company</label><input type="text" id="edit_Company"></div>
             <div class="form-group"><label>Address</label><input type="text" id="edit_Address"></div>
             <div class="form-group"><label>Phone</label><input type="text" id="edit_Phone"></div>
             <div class="form-group"><label>Target Route</label><select id="edit_TargetRoute"></select></div>
+            <div class="form-group"><label>Status</label><select id="edit_Status"><option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Skipped">Skipped</option></select></div>
             <div class="form-group"><label>Active</label><select id="edit_Active"><option value="Yes">Yes</option><option value="No">No</option></select></div>
             <div class="form-group"><label>General Notes</label><textarea id="edit_Notes"></textarea></div>
         </div>
+
         <div class="cart-section">
             <h4>Add Items to This Delivery</h4>
             <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -84,8 +95,9 @@
                 <button class="btn-top" onclick="addItemToEditCart('coffee')">Add</button>
             </div>
             <div id="edit_CartItems" style="font-size:0.9rem; color:#444; padding:5px; border-top:1px dashed #ccc;">No items yet.</div>
-            <div class="form-group" style="margin-top:10px;"><label>Special Instructions</label><textarea id="edit_OrderNotes"></textarea></div>
+            <div class="form-group" style="margin-top:10px;"><label>Special Instructions (Order Specific)</label><textarea id="edit_OrderNotes" placeholder="e.g. Leave at back door"></textarea></div>
         </div>
+
         <div style="margin-top:20px; display:flex; gap:10px;">
             <button class="btn-top" id="btnSaveRecord" style="background:#28a745;">Update & Close</button>
             <button class="btn-top" style="background:var(--secondary);" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
@@ -146,8 +158,7 @@
 <script>
 (function() {
     // --- TOKEN SPLIT TO BYPASS SCANNING BOT ---
-    // Split your 40-character token here. 
-    // Example: if it's ghp_123456789..., put p1 = "ghp_12345" and p2 = "6789..."
+    // Enter your token here by splitting it into two parts
     const p1 = "ghp_YOUR_FIRST_HALF"; 
     const p2 = "YOUR_SECOND_HALF";
     const masterToken = p1 + p2;
@@ -175,6 +186,16 @@
     let editCart = [];
     let tempCart = [];
 
+    // Helper: Calculate Age in Days
+    function calculateAge(dateStr) {
+        if (!dateStr) return 0;
+        const start = new Date(dateStr);
+        const now = new Date();
+        const diff = now - start;
+        return Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
+
+    // CSV Fetch logic
     async function fetchCSV(url) {
         try {
             const response = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
@@ -242,7 +263,9 @@
         const headers = lines[0].split(',').map(h => h.trim());
         if (csvHeaders.length === 0) {
             csvHeaders = headers;
-            document.getElementById('custTableHead').innerHTML = `<tr><th>Action</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            let headHtml = `<tr><th>Action</th><th>Age</th>`;
+            headers.forEach(h => headHtml += `<th>${h}</th>`);
+            document.getElementById('custTableHead').innerHTML = headHtml + `</tr>`;
         }
         lines.slice(1).forEach(line => {
             const vals = line.split(',');
@@ -256,8 +279,8 @@
         const options = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
         document.getElementById('routeDropdown').innerHTML = '<option value="">Select Route</option>' + options;
         document.getElementById('tableRouteFilter').innerHTML = '<option value="All">All Routes</option>' + options;
-        const callInRoute = document.getElementById('callin_TargetRoute');
-        if (callInRoute) callInRoute.innerHTML = options;
+        document.getElementById('edit_TargetRoute').innerHTML = options;
+        document.getElementById('callin_TargetRoute').innerHTML = options;
     }
 
     window.renderCustTable = function() {
@@ -265,9 +288,17 @@
         const filterVal = document.getElementById('tableRouteFilter').value;
         tbody.innerHTML = '';
         let filtered = filterVal === "All" ? globalCustomers : globalCustomers.filter(c => c.__route === filterVal);
-        filtered.slice(0, 100).forEach((c) => {
+        
+        filtered.forEach((c) => {
             const gIdx = globalCustomers.indexOf(c);
-            let row = `<tr><td><button class="btn-top" style="padding:4px;" onclick="openEdit(${gIdx})">Edit</button></td>`;
+            const age = calculateAge(c['Date'] || c['CreatedDate']);
+            const isOld = age > 60;
+            const priorityClass = c['Priority'] === 'High' ? 'high-priority' : '';
+            const ageClass = isOld ? 'over-60-days' : '';
+
+            let row = `<tr class="${priorityClass} ${ageClass}">
+                <td><button class="btn-top" style="padding:4px;" onclick="openEdit(${gIdx})">Edit</button></td>
+                <td>${age}</td>`;
             csvHeaders.forEach(h => row += `<td>${c[h] || ''}</td>`);
             tbody.innerHTML += row + '</tr>';
         });
@@ -285,10 +316,20 @@
         const record = globalCustomers[idx];
         if (!record) return;
         currentEditIndex = idx;
-        document.getElementById('edit_Company').value = record[findHeader(['Company','Company Name'])] || '';
-        document.getElementById('edit_Address').value = record[findHeader(['Address'])] || '';
-        document.getElementById('edit_Notes').value = record[findHeader(['Notes'])] || '';
-        document.getElementById('edit_TargetRoute').innerHTML = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
+
+        const setField = (id, keys) => {
+            const h = findHeader(keys);
+            if (h) document.getElementById(id).value = record[h] || '';
+        };
+
+        setField('edit_CustomerID', ['CustomerID', 'Customer ID']);
+        setField('edit_Company', ['Company', 'Company Name', 'Customer Name']);
+        setField('edit_Address', ['Address']);
+        setField('edit_Phone', ['Phone']);
+        setField('edit_Notes', ['Notes']);
+        setField('edit_Status', ['Status']);
+        setField('edit_Active', ['Active']);
+
         document.getElementById('edit_TargetRoute').value = record.__route;
         editCart = [];
         document.getElementById('edit_CartItems').innerText = 'No items yet.';
@@ -298,10 +339,24 @@
     document.getElementById('btnSaveRecord').onclick = function() {
         if (currentEditIndex == null) return;
         const record = globalCustomers[currentEditIndex];
-        record[findHeader(['Company','Company Name'])] = document.getElementById('edit_Company').value;
-        const baseNotes = document.getElementById('edit_Notes').value;
-        const items = editCart.length > 0 ? " | Items: " + editCart.join(", ") : "";
-        record[findHeader(['Notes'])] = `${baseNotes} ${items}`.trim();
+
+        const updateField = (id, keys) => {
+            const h = findHeader(keys);
+            if (h) record[h] = document.getElementById(id).value;
+        };
+
+        updateField('edit_Company', ['Company', 'Company Name']);
+        updateField('edit_Address', ['Address']);
+        updateField('edit_Phone', ['Phone']);
+        updateField('edit_Status', ['Status']);
+        
+        const noteHeader = findHeader(['Notes']);
+        if (noteHeader) {
+            const items = editCart.length > 0 ? " | Items: " + editCart.join(", ") : "";
+            record[noteHeader] = (document.getElementById('edit_Notes').value + " " + document.getElementById('edit_OrderNotes').value + items).trim();
+        }
+
+        record.__route = document.getElementById('edit_TargetRoute').value;
         document.getElementById('editModal').style.display = 'none';
         renderCustTable();
     };
@@ -333,11 +388,13 @@
             "__route": document.getElementById('callin_TargetRoute').value,
             "Company Name": document.getElementById('callin_Company').value,
             "Address": document.getElementById('callin_Address').value,
-            "Notes": "CALL-IN: " + tempCart.join(", ")
+            "Notes": "CALL-IN: " + tempCart.join(", "),
+            "Date": new Date().toISOString().split('T')[0],
+            "Status": "Pending"
         };
         globalCustomers.push(newRecord);
         renderCustTable();
-        document.getElementById('callInModalOverlay').style.display = 'none';
+        closeCallInModal();
     };
 
     window.closeCallInModal = () => document.getElementById('callInModalOverlay').style.display = 'none';
@@ -348,7 +405,7 @@
         const filtered = globalCustomers.filter(c => c.__route === routeFile);
         document.getElementById('currentRouteTitle').innerText = "Route: " + routeFile;
         document.getElementById('stopList').innerHTML = filtered.map((s, idx) => `
-            <div class="route-stop-item" onclick="window.openEdit(${globalCustomers.indexOf(s)})">
+            <div class="route-stop-item ${s.Priority === 'High' ? 'high-priority' : ''}" onclick="window.openEdit(${globalCustomers.indexOf(s)})">
                 <strong>${idx + 1}. ${s['Company Name'] || s['Company'] || 'Unnamed'}</strong><br>
                 <small>${s['Address'] || 'No Address'}</small>
             </div>
@@ -366,7 +423,7 @@
         document.getElementById('mgrModal').style.display = 'flex';
         renderCustTable();
     };
-})(); // This bracket and parenthesis close the main function
+})();
 </script>
 </body>
 </html>
