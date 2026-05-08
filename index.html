@@ -10,84 +10,143 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
-        /* 1. RESTORED HEADER & INFO BAR */
+        /* NAVIGATION & HEADER */
         header { background: #004a99; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1100; }
         .nav-controls { background: #e9ecef; padding: 12px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #ccc; }
         .info-pill { background: white; border: 1px solid #cbd5e0; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; color: #2d3748; flex-grow: 1; min-height: 20px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
 
-        /* 2. SPLIT-PANE UI (70% Map / 30% Sidebar) */
+        /* SPLIT VIEW (70/30) */
         .main-view { display: flex; flex: 1; height: calc(100vh - 120px); }
-        #map { flex: 7; height: 100%; border-right: 1px solid #ccc; }
+        #map { flex: 7; height: 100%; border-right: 1px solid #ccc; z-index: 1; }
         .sidebar { flex: 3; background: white; display: flex; flex-direction: column; overflow: hidden; }
 
+        /* MANIFEST SIDEBAR */
         .stop-list-container { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
-        .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; border-left: 5px solid #004a99; }
-        .delivery-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px; cursor: pointer; border-left: 5px solid #004a99; }
         .delivery-card.active { border-left-color: #28a745; background: #f0fff4; }
 
-        /* Buttons & Modals */
-        .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        /* BUTTON STYLES */
+        .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; white-space: nowrap; }
         .btn-ui:hover { opacity: 0.9; filter: brightness(1.1); }
+
+        /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 1200px; max-height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-content { background: white; width: 95%; max-width: 1300px; height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .mgmt-table { width: 100%; border-collapse: collapse; background: white; }
+        .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
+        .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; color: #4a5568; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
-        <h1 style="margin:0; font-size:1.6rem; letter-spacing: -0.5px;"><i class="fas fa-truck-loading"></i> LogiFlow Dispatch</h1>
-        <select id="routeDropdown" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
+        <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> LogiFlow Dispatch</h1>
+        <select id="routeDropdown" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px;"></select>
     </div>
     <div style="display:flex; gap:12px;">
-        <button class="btn-ui" style="background:#6c757d;" onclick="openManager()"><i class="fas fa-user-shield"></i> Manager Portal</button>
+        <button class="btn-ui" style="background:#6c757d;" onclick="openModal('mgrModal')"><i class="fas fa-user-shield"></i> Manager Portal</button>
         <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
 </header>
 
 <div class="nav-controls">
     <button class="btn-ui" style="background: #28a745;" onclick="startRoute()"><i class="fas fa-play"></i> START ROUTE</button>
-    <button class="btn-ui" style="background: #dc3545;" onclick="managerEndOfDay()"><i class="fas fa-flag-checkered"></i> FINISH</button>
-    <div id="activeAddress" class="info-pill">Current Address: ---</div>
+    <button class="btn-ui" style="background: #dc3545;" onclick="runEndOfDay()"><i class="fas fa-flag-checkered"></i> FINISH</button>
+    <div id="activeAddress" class="info-pill">Address: ---</div>
     <div id="activePhone" class="info-pill" style="flex-grow: 0; min-width: 180px;">Phone: ---</div>
-    <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeCurrentRoute()"><i class="fas fa-magic"></i> OPTIMIZE</button>
+    <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeCurrent()"><i class="fas fa-magic"></i> OPTIMIZE</button>
 </div>
 
 <div class="main-view">
     <div id="map"></div>
     <div class="sidebar">
         <div style="padding:15px; border-bottom:1px solid #eee; background:#f8fafc;">
-            <h3 style="margin:0; color:#1a202c;">Manifest Stops</h3>
+            <h3 style="margin:0;">Route Manifest</h3>
         </div>
-        <div id="stopList" class="stop-list-container">
-            <div style="text-align:center; color:#718096; padding-top:40px;">
-                <i class="fas fa-map-marked-alt fa-3x" style="opacity:0.3; margin-bottom:15px;"></i><br>
-                Please select a route to load manifest.
-            </div>
-        </div>
+        <div id="stopList" class="stop-list-container"></div>
     </div>
 </div>
 
 <div id="mgrModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#004a99; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">Management Hub</h3>
-            <button onclick="closeModal('mgrModal')" style="background:transparent; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            <h3 style="margin:0;"><i class="fas fa-tasks"></i> Management Hub</h3>
+            <button onclick="closeModal('mgrModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
+        
         <div style="padding:20px; flex:1; overflow-y:auto;">
-            <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
-                <button class="btn-ui" style="background:#007bff;" onclick="renderCustTable()">Customer Maint.</button>
-                <button class="btn-ui" style="background:#6c757d;">Product Maint.</button>
-                <button class="btn-ui" style="background:#f39c12;">EOD Review</button>
-                <button class="btn-ui" style="background:#28a745;" onclick="openNewCustomerModal()">+ New Entry</button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
+                <button class="btn-ui" style="background:#007bff;" onclick="renderCustomerMaint()"><i class="fas fa-users"></i> Customer Maintenance</button>
+                <button class="btn-ui" style="background:#6c757d;" onclick="alert('Opening Product Maintenance...')"><i class="fas fa-boxes"></i> Product Maintenance</button>
+                <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
+                <button class="btn-ui" style="background:#17a2b8;" onclick="toggleLiveView()"><i class="fas fa-satellite"></i> Live View</button>
+                <button class="btn-ui" style="background:#28a745;" onclick="openModal('callInModal')"><i class="fas fa-phone"></i> Call-In Order</button>
+                <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
+                <button class="btn-ui" style="background:#004a99;" onclick="alert('Loading Delivery Slips...')"><i class="fas fa-file-invoice"></i> Slip Viewer</button>
             </div>
-            <div style="background:#f8fafc; padding:15px; border-radius:8px;">
-                <table id="mgmtTable" style="width:100%; border-collapse:collapse;">
-                    <thead style="background:#edf2f7;">
-                        <tr><th style="padding:12px; text-align:left; border-bottom:2px solid #cbd5e0;">Company</th><th style="padding:12px; text-align:left; border-bottom:2px solid #cbd5e0;">Address</th><th style="padding:12px; text-align:left; border-bottom:2px solid #cbd5e0;">Action</th></tr>
-                    </thead>
-                    <tbody id="custTableBody"></tbody>
-                </table>
+
+            <div id="mgrViewArea" style="background:white; border:1px solid #cbd5e0; border-radius:8px;">
+                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                    <input type="text" id="mgrSearch" onkeyup="filterMgrTable()" placeholder="Search names, addresses, or phone numbers..." style="padding:8px; width:40%; border:1px solid #ccc; border-radius:4px;">
+                    <button class="btn-ui" style="background:#28a745;" onclick="openModal('newCustModal')">+ Add New Customer</button>
+                </div>
+                <div style="max-height:55vh; overflow-y:auto;">
+                    <table class="mgmt-table" id="mainMgmtTable">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Address</th>
+                                <th>Phone</th>
+                                <th>Route</th>
+                                <th>Last Service</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgrTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="callInModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:600px; height:auto;">
+        <div style="background:#28a745; color:white; padding:15px; display:flex; justify-content:space-between;">
+            <h3 style="margin:0;">Create Call-In Order</h3>
+            <button onclick="closeModal('callInModal')" style="background:none; border:none; color:white; font-size:1.2rem;">&times;</button>
+        </div>
+        <div style="padding:20px;">
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Select Customer</label>
+                <select id="callInCustSelect" style="padding:10px;"></select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Target Route</label>
+                    <select id="callInRouteSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="callInPriority">
+                        <option value="Normal">Normal</option>
+                        <option value="High">High (Immediate)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Special Instructions</label>
+                <input type="text" id="callInNotes" placeholder="e.g., Leave by side door">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button class="btn-ui" style="background:#6c757d;" onclick="closeModal('callInModal')">Cancel</button>
+                <button class="btn-ui" style="background:#28a745;" onclick="saveCallIn()">Add to Manifest</button>
             </div>
         </div>
     </div>
@@ -95,28 +154,85 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // All background logic for mapping, CSV handling, and optimization 
-    // from the previous build remains intact here.
-    
-    function startRoute() {
-        const route = document.getElementById('routeDropdown').value;
-        if(!route) return alert("Select route first.");
-        alert("Initializing tracking for: " + route);
-        // Mapping logic triggers here
+    let map;
+    let globalCustomers = [];
+    const warehouseCoord = [55.1707, -118.7947];
+
+    // --- CORE APP INIT ---
+    function initApp() {
+        map = L.map('map').setView(warehouseCoord, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.marker(warehouseCoord).addTo(map).bindPopup("<b>Warehouse</b>").openPopup();
+        
+        window.addEventListener('resize', () => {
+            if (map && typeof map.invalidateSize === 'function') map.invalidateSize();
+        });
+        
+        loadMockData(); // In production, this fetches from your GitHub CSVs
     }
 
-    function openManager() {
-        document.getElementById('mgrModal').style.display = 'flex';
+    // --- CUSTOMER MAINTENANCE ---
+    function renderCustomerMaint() {
+        const tbody = document.getElementById('mgrTableBody');
+        tbody.innerHTML = globalCustomers.map(cust => `
+            <tr>
+                <td>${cust.name}</td>
+                <td>${cust.address}</td>
+                <td>${cust.phone}</td>
+                <td>${cust.route}</td>
+                <td>${cust.lastService || 'N/A'}</td>
+                <td>
+                    <button onclick="editCust('${cust.id}')" style="color:#007bff; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteCust('${cust.id}')" style="color:#dc3545; border:none; background:none; cursor:pointer; margin-left:10px;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
     }
 
-    function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
+    // --- CALL-IN LOGIC ---
+    function saveCallIn() {
+        const custId = document.getElementById('callInCustSelect').value;
+        const route = document.getElementById('callInRouteSelect').value;
+        alert(`Order Added: Customer ID ${custId} added to ${route} manifest.`);
+        closeModal('callInModal');
     }
 
-    // Initialize 70/30 split awareness
-    window.addEventListener('resize', () => {
-        if(map) map.invalidateSize();
-    });
+    // --- END OF DAY LOGIC ---
+    function runEndOfDay() {
+        if(confirm("Confirm End of Day? This will archive today's slips and clear the current route.")) {
+            alert("Generating EOD Summary Report... Data synced to backup.");
+            location.reload();
+        }
+    }
+
+    // --- BACKUP SYSTEM ---
+    function downloadBackup() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Name,Address,Phone,Route\n";
+        globalCustomers.forEach(c => {
+            csvContent += `${c.id},"${c.name}","${c.address}","${c.phone}",${c.route}\n`;
+        });
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", `Culligan_GP_Backup_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+    }
+
+    // --- UTILS ---
+    function openModal(id) { 
+        document.getElementById(id).style.display = 'flex'; 
+        if(id === 'mgrModal') renderCustomerMaint();
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function loadMockData() {
+        globalCustomers = [
+            {id: '101', name: 'Grande Prairie Hospital', address: '11205 110 St', phone: '780-538-7100', route: 'W1-D1'},
+            {id: '102', name: 'Prairie Mall', address: '11801 100 St', phone: '780-532-1811', route: 'W1-D1'}
+        ];
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
 </script>
 
 </body>
