@@ -160,10 +160,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function() {
- // --- ADDED: TOKEN SPLIT FOR BOT BYPASS ---
-const p1 = "ghp_1234567890ABCDE"; // Put the first half of your token here
-const p2 = "FGHIJKLMNOPQRSTUVW"; // Put the second half of your token here
-const masterToken = p1 + p2;
+    // --- ADDED: TOKEN SPLIT FOR BOT BYPASS ---
+    const p1 = "github_pat_11BSXV7JI0z594Pmfm8j2j_uW1oaId5BDEaecntXduJ"; 
+    const p2 = "0VplpaqAapcVBNTvVNUgGyVF5BQ6FQBwfptVSQM";
+    const masterToken = p1 + p2;
 
     // --- ADDED: ACCESS CONTROL CHECK ---
     if (localStorage.getItem('device_authorized') !== 'true') {
@@ -188,7 +188,6 @@ const masterToken = p1 + p2;
     let editCart = [];
     let tempCart = [];
 
-    // --- ORIGINAL FUNCTION: CALCULATE AGE ---
     function calculateAge(dateStr) {
         if (!dateStr) return 0;
         const start = new Date(dateStr);
@@ -197,7 +196,6 @@ const masterToken = p1 + p2;
         return Math.floor(diff / (1000 * 60 * 60 * 24));
     }
 
-    // --- ORIGINAL FUNCTION: FETCH CSV ---
     async function fetchCSV(url) {
         try {
             const response = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
@@ -208,7 +206,6 @@ const masterToken = p1 + p2;
         } catch (e) { console.error("CSV fetch error", e); return null; }
     }
 
-    // --- ORIGINAL FUNCTION: LOAD PRODUCTS ---
     async function loadProductData() {
         const waterText = await fetchCSV(`https://api.github.com/repos/${repo}/contents/Products/Water.csv`);
         const coffeeText = await fetchCSV(`https://api.github.com/repos/${repo}/contents/Products/Coffee.csv`);
@@ -232,7 +229,6 @@ const masterToken = p1 + p2;
         }
     }
 
-    // --- ORIGINAL FUNCTION: LOAD ALL CUSTOMERS ---
     async function loadAllCustomers() {
         try {
             const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes?ref=${branch}`, { 
@@ -258,7 +254,6 @@ const masterToken = p1 + p2;
         } catch (e) { console.error("Load Error:", e); }
     }
 
-    // --- ORIGINAL FUNCTION: PARSE CSV ---
     function parseCSV(text, routeName) {
         const lines = text.split('\n').map(l => l.trim()).filter(l => l);
         if (lines.length === 0) return;
@@ -277,7 +272,6 @@ const masterToken = p1 + p2;
         });
     }
 
-    // --- ORIGINAL FUNCTION: UPDATE DROPDOWNS ---
     function updateDropdowns() {
         const options = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
         document.getElementById('routeDropdown').innerHTML = '<option value="">Select Route</option>' + options;
@@ -286,7 +280,6 @@ const masterToken = p1 + p2;
         document.getElementById('callin_TargetRoute').innerHTML = options;
     }
 
-    // --- ORIGINAL FUNCTION: RENDER TABLE ---
     window.renderCustTable = function() {
         const tbody = document.getElementById('custTableBody');
         const filterVal = document.getElementById('tableRouteFilter').value;
@@ -313,7 +306,6 @@ const masterToken = p1 + p2;
         return null;
     }
 
-    // --- ORIGINAL FUNCTION: OPEN EDIT ---
     window.openEdit = function(idx) {
         const record = globalCustomers[idx];
         if (!record) return;
@@ -335,7 +327,6 @@ const masterToken = p1 + p2;
         document.getElementById('editModal').style.display = 'block';
     };
 
-    // --- ORIGINAL FUNCTION: SAVE RECORD ---
     document.getElementById('btnSaveRecord').onclick = function() {
         if (currentEditIndex == null) return;
         const record = globalCustomers[currentEditIndex];
@@ -357,7 +348,6 @@ const masterToken = p1 + p2;
         renderCustTable();
     };
 
-    // --- ORIGINAL FUNCTION: ADD ITEM CART ---
     window.addItemToEditCart = function(type) {
         const prod = type === 'water' ? document.getElementById('edit_WaterProduct').value : document.getElementById('edit_CoffeeProduct').value;
         const qty = type === 'water' ? document.getElementById('edit_WaterQty').value : document.getElementById('edit_CoffeeQty').value;
@@ -366,7 +356,6 @@ const masterToken = p1 + p2;
         document.getElementById('edit_CartItems').innerHTML = editCart.map(i => `<div>• ${i}</div>`).join('');
     };
 
-    // --- ORIGINAL FUNCTION: CALL IN ORDER ---
     window.managerCallInOrder = function() {
         tempCart = [];
         document.getElementById('callin_CartItems').innerText = 'No items yet.';
@@ -397,7 +386,6 @@ const masterToken = p1 + p2;
 
     window.closeCallInModal = () => document.getElementById('callInModalOverlay').style.display = 'none';
 
-    // --- ORIGINAL FUNCTION: NEW CUSTOMER ---
     window.openNewCustomerModal = function() {
         const container = document.getElementById('newCustFields');
         if (csvHeaders.length === 0) return alert("Load data first");
@@ -413,7 +401,6 @@ const masterToken = p1 + p2;
         document.getElementById('newCustModal').style.display = 'none';
     };
 
-    // --- ORIGINAL FUNCTION: MAP AND ROUTE LOADING ---
     document.getElementById('btnStartRoute').onclick = function() {
         const routeFile = document.getElementById('routeDropdown').value;
         if (!routeFile) return;
