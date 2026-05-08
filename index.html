@@ -85,6 +85,12 @@
                 <select id="edit_WaterUnits" style="width:80px;"><option>Btl</option><option>Cs</option></select>
                 <button class="btn-top" onclick="addItemToEditCart('water')">Add</button>
             </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <select id="edit_CoffeeProduct" style="flex:2;"></select>
+                <input type="number" id="edit_CoffeeQty" value="1" style="width:60px;">
+                <select id="edit_CoffeeUnits" style="width:80px;"><option>Bag</option><option>Box</option></select>
+                <button class="btn-top" onclick="addItemToEditCart('coffee')">Add</button>
+            </div>
             <div id="edit_CartItems" style="font-size:0.9rem; color:#444; padding:5px; border-top:1px dashed #ccc;">No items yet.</div>
             <div class="form-group" style="margin-top:10px;"><label>Special Instructions (Order Specific)</label><textarea id="edit_OrderNotes" placeholder="e.g. Leave at back door"></textarea></div>
         </div>
@@ -129,10 +135,15 @@
         </div>
         <div class="cart-section">
             <h4>Quick Add Items</h4>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <select id="callin_WaterProduct" style="flex:2;"></select>
                 <input type="number" id="callin_WaterQty" value="1" style="width:60px;">
                 <button class="btn-top" onclick="addItemToCallInCart('water')">Add</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <select id="callin_CoffeeProduct" style="flex:2;"></select>
+                <input type="number" id="callin_CoffeeQty" value="1" style="width:60px;">
+                <button class="btn-top" onclick="addItemToCallInCart('coffee')">Add</button>
             </div>
             <div id="callin_CartItems" style="margin-top:10px; font-weight:bold;"></div>
         </div>
@@ -143,13 +154,25 @@
     </div>
 </div>
 
+<!-- NEW CUSTOMER MODAL -->
+<div id="newCustModal" class="modal">
+    <div class="modal-content">
+        <h3>Add New Master Customer</h3>
+        <div id="newCustFields" class="form-grid"></div>
+        <div style="margin-top:20px;">
+            <button class="btn-top" onclick="saveNewCustomer()" style="background:#28a745;">Save New Customer</button>
+            <button class="btn-top" style="background:var(--secondary);" onclick="document.getElementById('newCustModal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function() {
-    // CONFIGURATION
+    // --- FIX ADDED: UPDATED REPO NAME ---
     const repo = "Billyschmidt123/Bottle-Water-1";
     const branch = "main";
-    const token = "YOUR_GITHUB_TOKEN"; // Replace with your actual token
+    const token = "YOUR_GITHUB_TOKEN"; // REPLACE WITH YOUR ACTUAL TOKEN
 
     let globalCustomers = [];
     let availableRoutes = [];
@@ -158,16 +181,52 @@
     let editCart = [];
     let tempCart = [];
 
-    // DATA LOADING
+    // --- FIX ADDED: PRODUCT FETCH HELPERS ---
+    async function fetchCSV(url) {
+        try {
+            const response = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+            if (!response.ok) return null;
+            const data = await response.json();
+            const content = await fetch(data.download_url);
+            return await content.text();
+        } catch (e) { console.error("CSV fetch error", e); return null; }
+    }
+
+    async function loadProductData() {
+        // Ensure folder 'Products' matches your GitHub case exactly
+        const waterText = await fetchCSV(`https://api.github.com/repos/${repo}/contents/Products/Water.csv`);
+        const coffeeText = await fetchCSV(`https://api.github.com/repos/${repo}/contents/Products/Coffee.csv`);
+
+        if (waterText) {
+            const lines = waterText.split('\n').slice(1).filter(l => l.trim());
+            const options = lines.map(line => {
+                const parts = line.split(',');
+                return `<option value="${parts[0]}">${parts[0]}</option>`;
+            }).join('');
+            document.getElementById('edit_WaterProduct').innerHTML = options;
+            document.getElementById('callin_WaterProduct').innerHTML = options;
+        }
+        if (coffeeText) {
+            const lines = coffeeText.split('\n').slice(1).filter(l => l.trim());
+            const options = lines.map(line => {
+                const parts = line.split(',');
+                return `<option value="${parts[0]}">${parts[0]}</option>`;
+            }).join('');
+            document.getElementById('edit_CoffeeProduct').innerHTML = options;
+            document.getElementById('callin_CoffeeProduct').innerHTML = options;
+        }
+    }
+
+    // --- FIX ADDED: LOAD LOGIC WITH UPPERCASE FOLDER FILTER ---
     async function loadAllCustomers() {
         try {
             const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes?ref=${branch}`, { 
                 headers: { 'Authorization': `token ${token}` } 
             });
-            if (!r.ok) throw new Error("Check Repo Path");
+            if (!r.ok) throw new Error("Could not access routes folder");
             const items = await r.json();
 
-            // LOOK FOR UPPERCASE FOLDERS ONLY
+            // Only process items that are directories and are UPPERCASE
             const folders = items.filter(i => i.type === 'dir' && i.name === i.name.toUpperCase());
             
             globalCustomers = [];
@@ -186,7 +245,7 @@
                 }
             }
             updateDropdowns();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Load Error:", e); }
     }
 
     function parseCSV(text, routeName) {
@@ -229,32 +288,59 @@
         document.getElementById('tableStatus').innerText = `Showing ${Math.min(filtered.length, 100)} of ${filtered.length}`;
     };
 
-    // EDIT LOGIC
+    // EDIT LOGIC (UNCHANGED)
+    function findHeader(possibleNames) {
+        for (const name of possibleNames) {
+            const h = csvHeaders.find(h => h.toLowerCase() === name.toLowerCase());
+            if (h) return h;
+        }
+        return null;
+    }
+
     const fieldMap = {
+        CustomerID: () => findHeader(['CustomerID','Customer ID','CustID']),
+        Week: () => findHeader(['Week']),
+        Day: () => findHeader(['Day']),
         Company: () => findHeader(['Company','Company Name','Customer Name']),
         Address: () => findHeader(['Address']),
-        Phone: () => findHeader(['Phone']),
-        Notes: () => findHeader(['Notes']),
-        Active: () => findHeader(['Active'])
+        Location: () => findHeader(['Location']),
+        Phone: () => findHeader(['Phone','Phone Number']),
+        Notes: () => findHeader(['Notes','Note']),
+        Email: () => findHeader(['Email']),
+        DeliveryFee: () => findHeader(['Delivery Fee','DeliveryFee']),
+        SpecialOrderItem: () => findHeader(['Special Order Item','SpecialOrderItem']),
+        Quantity: () => findHeader(['Quantity','Qty']),
+        Active: () => findHeader(['Active']),
+        TargetRoute: () => findHeader(['Route','Target Route','__route'])
     };
-
-    function findHeader(names) {
-        return csvHeaders.find(h => names.some(n => h.toLowerCase() === n.toLowerCase()));
-    }
 
     window.openEdit = function(idx) {
         const record = globalCustomers[idx];
         if (!record) return;
         currentEditIndex = idx;
 
-        document.getElementById('edit_Company').value = record[fieldMap.Company()] || '';
-        document.getElementById('edit_Address').value = record[fieldMap.Address()] || '';
-        document.getElementById('edit_Phone').value = record[fieldMap.Phone()] || '';
-        document.getElementById('edit_Notes').value = record[fieldMap.Notes()] || '';
-        
         const routeSel = document.getElementById('edit_TargetRoute');
-        routeSel.innerHTML = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
-        routeSel.value = record.__route;
+        if (routeSel) {
+            routeSel.innerHTML = availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
+        }
+
+        function setVal(id, headerKey) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const header = fieldMap[headerKey] && fieldMap[headerKey]();
+            el.value = header ? (record[header] || '') : '';
+        }
+
+        setVal('edit_Company','Company');
+        setVal('edit_Address','Address');
+        setVal('edit_Phone','Phone');
+        setVal('edit_Notes','Notes');
+
+        const activeHeader = fieldMap.Active && fieldMap.Active();
+        const activeEl = document.getElementById('edit_Active');
+        if (activeEl) activeEl.value = activeHeader ? (record[activeHeader] || 'Yes') : 'Yes';
+
+        if (routeSel) routeSel.value = record.__route;
 
         editCart = [];
         document.getElementById('edit_CartItems').innerText = 'No items yet.';
@@ -262,37 +348,61 @@
     };
 
     document.getElementById('btnSaveRecord').onclick = function() {
+        if (currentEditIndex == null) return;
         const record = globalCustomers[currentEditIndex];
-        record[fieldMap.Company()] = document.getElementById('edit_Company').value;
-        record[fieldMap.Address()] = document.getElementById('edit_Address').value;
-        record[fieldMap.Notes()] = document.getElementById('edit_Notes').value + (editCart.length > 0 ? " | Order: " + editCart.join(", ") : "");
-        record.__route = document.getElementById('edit_TargetRoute').value;
 
+        function writeBack(headerKey, id) {
+            const header = fieldMap[headerKey] && fieldMap[headerKey]();
+            if (header) record[header] = document.getElementById(id).value;
+        }
+
+        writeBack('Company', 'edit_Company');
+        writeBack('Address', 'edit_Address');
+        writeBack('Phone', 'edit_Phone');
+        
+        const noteHeader = fieldMap.Notes();
+        if (noteHeader) {
+            const baseNotes = document.getElementById('edit_Notes').value;
+            const orderNotes = document.getElementById('edit_OrderNotes').value;
+            const items = editCart.length > 0 ? " | Items: " + editCart.join(", ") : "";
+            record[noteHeader] = `${baseNotes} ${orderNotes} ${items}`.trim();
+        }
+
+        record.__route = document.getElementById('edit_TargetRoute').value;
         document.getElementById('editModal').style.display = 'none';
         renderCustTable();
     };
 
-    // CALL-IN LOGIC
+    window.addItemToEditCart = function(type) {
+        const prod = type === 'water' ? document.getElementById('edit_WaterProduct').value : document.getElementById('edit_CoffeeProduct').value;
+        const qty = type === 'water' ? document.getElementById('edit_WaterQty').value : document.getElementById('edit_CoffeeQty').value;
+        const unit = type === 'water' ? document.getElementById('edit_WaterUnits').value : document.getElementById('edit_CoffeeUnits').value;
+        if (!prod || qty <= 0) return alert("Check selection and quantity");
+        editCart.push(`${qty} ${unit} - ${prod}`);
+        document.getElementById('edit_CartItems').innerHTML = editCart.map(i => `<div>• ${i}</div>`).join('');
+    };
+
+    // CALL-IN LOGIC (UNCHANGED)
     window.managerCallInOrder = function() {
         tempCart = [];
-        document.getElementById('callin_CartItems').innerText = '';
+        document.getElementById('callin_CartItems').innerText = 'No items yet.';
         document.getElementById('callInModalOverlay').style.display = 'flex';
     };
 
-    window.addItemToCallInCart = function() {
-        const prod = document.getElementById('callin_WaterProduct').value;
-        const q = document.getElementById('callin_WaterQty').value;
-        if (!prod) return;
-        tempCart.push(`${q} - ${prod}`);
+    window.addItemToCallInCart = function(type) {
+        const prod = type === 'water' ? document.getElementById('callin_WaterProduct').value : document.getElementById('callin_CoffeeProduct').value;
+        const qty = type === 'water' ? document.getElementById('callin_WaterQty').value : document.getElementById('callin_CoffeeQty').value;
+        if (!prod || qty <= 0) return alert("Check selection");
+        tempCart.push(`${qty} - ${prod}`);
         document.getElementById('callin_CartItems').innerHTML = tempCart.map(i => `<div>• ${i}</div>`).join('');
     };
 
     window.saveCallInOrder = function() {
         const newRecord = {
             "__route": document.getElementById('callin_TargetRoute').value,
-            [fieldMap.Company()]: document.getElementById('callin_Company').value,
-            [fieldMap.Address()]: document.getElementById('callin_Address').value,
-            [fieldMap.Notes()]: "CALL-IN: " + tempCart.join(", ")
+            "Company Name": document.getElementById('callin_Company').value,
+            "Address": document.getElementById('callin_Address').value,
+            "Notes": "CALL-IN: " + tempCart.join(", ") + " | " + document.getElementById('callin_OrderNotes').value
         };
         globalCustomers.push(newRecord);
         renderCustTable();
@@ -301,25 +411,44 @@
 
     window.closeCallInModal = () => document.getElementById('callInModalOverlay').style.display = 'none';
 
-    // ROUTE EXECUTION
+    window.openNewCustomerModal = function() {
+        const container = document.getElementById('newCustFields');
+        if (csvHeaders.length === 0) return alert("Load data first");
+        container.innerHTML = csvHeaders.map(h => `<div class="form-group"><label>${h}</label><input type="text" id="new_cust_${h.replace(/\s+/g, '_')}"></div>`).join('');
+        document.getElementById('newCustModal').style.display = 'block';
+    };
+
+    window.saveNewCustomer = function() {
+        let newCust = { "__route": availableRoutes[0] };
+        csvHeaders.forEach(h => newCust[h] = document.getElementById(`new_cust_${h.replace(/\s+/g, '_')}`).value);
+        globalCustomers.push(newCust);
+        renderCustTable();
+        document.getElementById('newCustModal').style.display = 'none';
+    };
+
+    // ROUTE EXECUTION (UNCHANGED)
     document.getElementById('btnStartRoute').onclick = function() {
         const routeFile = document.getElementById('routeDropdown').value;
+        if (!routeFile) return;
         const filtered = globalCustomers.filter(c => c.__route === routeFile);
         document.getElementById('currentRouteTitle').innerText = "Route: " + routeFile;
-        
         document.getElementById('stopList').innerHTML = filtered.map((s, idx) => `
             <div class="route-stop-item" onclick="window.openEdit(${globalCustomers.indexOf(s)})">
-                <strong>${idx + 1}. ${s[fieldMap.Company()] || 'Unnamed'}</strong><br>
-                <small>${s[fieldMap.Address()] || 'No Address'}</small>
+                <strong>${idx + 1}. ${s['Company Name'] || s['Company'] || 'Unnamed'}</strong><br>
+                <small>${s['Address'] || 'No Address'}</small>
             </div>
         `).join('');
     };
 
-    // INITIALIZATION
+    // MAP INITIALIZATION (UNCHANGED)
     let map = L.map('map').setView([55.17, -118.79], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    window.addEventListener('load', loadAllCustomers);
+    // STARTUP
+    window.addEventListener('load', () => {
+        loadAllCustomers().then(() => loadProductData());
+    });
+
     document.getElementById('btnManager').onclick = () => {
         document.getElementById('mgrModal').style.display = 'flex';
         renderCustTable();
