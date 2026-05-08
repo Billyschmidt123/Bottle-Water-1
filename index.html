@@ -476,22 +476,35 @@
     }
 
     async function loadAllCustomers() {
-        try {
-            const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes`, { 
+    try {
+        const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes`, { 
+            headers: { 'Authorization': `token ${token}` } 
+        });
+        const files = r.ok ? await r.json() : [];
+        
+        // Filter for folders that are strictly UPPERCASE
+        const upperCaseFolders = files.filter(f => {
+            return f.type === 'dir' && f.name === f.name.toUpperCase();
+        });
+
+        // If you are looking for CSV files inside those specific folders:
+        availableRoutes = [];
+        globalCustomers = [];
+
+        for (let folder of upperCaseFolders) {
+            const folderRes = await fetch(folder.url, { 
                 headers: { 'Authorization': `token ${token}` } 
             });
-            const files = r.ok ? await r.json() : [];
-            availableRoutes = files.filter(f => f.name.endsWith('.csv')).map(f => f.name);
-            
-            const routeDropdown = document.getElementById('routeDropdown');
-            routeDropdown.innerHTML = '<option value="">Select Route</option>' + availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
-            document.getElementById('tableRouteFilter').innerHTML = '<option value="All">All Routes</option>' + availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
-            
-            globalCustomers = [];
-            for (let f of files) {
+            const folderContents = await folderRes.json();
+
+            for (let f of folderContents) {
                 if (!f.name.endsWith('.csv')) continue;
+                
+                availableRoutes.push(f.name);
                 const text = await (await fetch(f.download_url + "?t=" + Date.now())).text();
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                
+                // Header and Row Processing Logic...
                 if (csvHeaders.length === 0 && lines.length > 0) {
                     csvHeaders = lines[0].split(',').map(h => h.trim());
                     document.getElementById('custTableHead').innerHTML = `<tr><th>Action</th>${csvHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
@@ -503,9 +516,17 @@
                     globalCustomers.push(rowObj);
                 });
             }
-        } catch (e) { console.error("Data load error", e); }
-    }
+        }
 
+        // Update UI Dropdowns
+        const routeDropdown = document.getElementById('routeDropdown');
+        routeDropdown.innerHTML = '<option value="">Select Route</option>' + availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
+        document.getElementById('tableRouteFilter').innerHTML = '<option value="All">All Routes</option>' + availableRoutes.map(r => `<option value="${r}">${r}</option>`).join('');
+
+    } catch (e) { 
+        console.error("Data load error", e); 
+    }
+}
     window.renderCustTable = function() {
         const tbody = document.getElementById('custTableBody');
         const filterVal = document.getElementById('tableRouteFilter').value;
