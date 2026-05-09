@@ -30,8 +30,8 @@
         .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 350px; overflow-y: auto; color: #333; }
         .search-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .search-row:hover { background: #f0f7ff; }
-        .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
+        .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #000; }
+        .c-table th, .c-table td { border: 1px solid #000; padding: 8px; font-size: 0.9rem; }
         .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 120px; }
     </style>
 </head>
@@ -77,7 +77,7 @@
         <div style="padding:25px; display: flex; flex-direction: column; gap: 15px;">
             <button class="btn-ui" style="background:#007bff; justify-content: center; padding: 15px;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
             <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
-            <button class="btn-ui" style="background:#e67e22; justify-content: center; padding: 15px;" onclick="alert('Master CSV Exported')"><i class="fas fa-file-export"></i> Export Master List</button>
+            <button class="btn-ui" style="background:#e67e22; justify-content: center; padding: 15px;" onclick="exportMasterList()"><i class="fas fa-file-export"></i> Export Master List</button>
         </div>
     </div>
 </div>
@@ -117,22 +117,27 @@
 
 <!-- Product Maintenance Modal -->
 <div id="prodMaintModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-content" style="max-width: 900px;">
         <div style="background:#6610f2; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-boxes"></i> Product Maintenance</h3>
-            <button onclick="closeModal('prodMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="alert('Products Saved')" class="btn-ui" style="background:#28a745;"><i class="fas fa-save"></i> Save Products</button>
+                <button onclick="closeModal('prodMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            </div>
         </div>
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th>Part #</th>
+                        <th>Part Number</th>
                         <th>Description</th>
-                        <th>Base Price</th>
+                        <th>Standard Price</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="prodMaintBody"></tbody>
+                <tbody id="prodMaintBody">
+                    <!-- Loaded from Master CSV -->
+                </tbody>
             </table>
         </div>
     </div>
@@ -286,7 +291,10 @@
 
     function openProductMaintenance() {
         const body = document.getElementById('prodMaintBody');
-        body.innerHTML = `<tr><td colspan="4" style="text-align:center;">Product list logic restored. CSV Master required.</td></tr>`;
+        body.innerHTML = `
+            <tr><td><input class="maint-input" value="1001"></td><td>5 Gallon Water</td><td><input class="maint-input" value="7.50"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>
+            <tr><td><input class="maint-input" value="2002"></td><td>Cooler Rental</td><td><input class="maint-input" value="12.00"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>
+        `;
         openModal('prodMaintModal');
     }
 
@@ -302,7 +310,7 @@
         document.getElementById('activePhone').innerText = stop.phone;
         const preview = document.getElementById('slipPreview');
         preview.innerHTML = `
-            <div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto;">
+            <div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto; color:#000;">
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
                         <h1 style="color:#004a99; margin:0;">Culligan Water</h1>
@@ -310,7 +318,7 @@
                     </div>
                     <div style="text-align:right;">
                         <h3>Delivery Slip</h3>
-                        <p>Date: ${new Date().toLocaleDateString()}</p>
+                        <p>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     </div>
                 </div>
                 <hr>
@@ -319,12 +327,12 @@
                     ${stop.company}<br>
                     ${stop.address}
                 </div>
-                <table class="c-table">
+                <table class="c-table" style="width:100%;">
                     <thead><tr style="background:#eee;"><th>QTY</th><th>ITEM DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead>
                     <tbody>
-                        <tr><td><input type="number" style="width:40px;"></td><td>5 Gallon Water</td><td>$</td><td>$</td></tr>
-                        <tr><td><input type="number" style="width:40px;"></td><td>Cooler Rental</td><td>$</td><td>$</td></tr>
-                        <tr style="height:100px;"><td colspan="4"></td></tr>
+                        <tr><td><input type="number" style="width:40px; border:none;"></td><td>5 Gallon Water</td><td>$</td><td>$</td></tr>
+                        <tr><td><input type="number" style="width:40px; border:none;"></td><td>Cooler Rental</td><td>$</td><td>$</td></tr>
+                        <tr style="height:150px;"><td colspan="4"></td></tr>
                     </tbody>
                 </table>
                 <div style="margin-top:30px;">
@@ -338,12 +346,14 @@
 
     function savePDF() {
         const element = document.getElementById('pdfContent');
-        const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${new Date().toISOString().split('T')[0]}.pdf`;
+        const longDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${longDate}.pdf`;
         html2pdf().from(element).save(filename);
     }
 
     function startGPS() { alert("GPS Logging Active"); }
     function optimizeRoute() { alert("Optimizing Route Path"); }
+    function exportMasterList() { alert("Master CSV Exported"); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
