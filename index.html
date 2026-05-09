@@ -38,6 +38,9 @@
         .del-btn:hover { color: #a71d2a; }
         /* Unit selector styling */
         .unit-select { padding: 2px; font-size: 0.75rem; border-radius: 3px; border: 1px solid #ccc; }
+        /* Maintenance specific styling */
+        .maint-input { width: 90%; padding: 5px; border: 1px solid #ddd; }
+        .deactivated { opacity: 0.5; background: #f9f9f9; }
         @media print { .no-print { display: none !important; } .only-print { display: inline !important; } }
         .only-print { display: none; }
     </style>
@@ -83,7 +86,8 @@
         </div>
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
-                <button class="btn-ui" style="background:#007bff;"><i class="fas fa-users"></i> Customer Maintenance</button>
+                <!-- Updated Button for Product Maintenance -->
+                <button class="btn-ui" style="background:#007bff;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
                 <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
                 <button class="btn-ui" style="background:#28a745;" onclick="alert('Manual Entry Mode Active')"><i class="fas fa-phone"></i> Call-In Order</button>
                 <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
@@ -129,6 +133,38 @@
     </div>
 </div>
 
+<!-- NEW MODAL FOR PRODUCT MAINTENANCE -->
+<div id="productMaintModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 98%;">
+        <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;"><i class="fas fa-tools"></i> Global Product Maintenance</h3>
+            <div style="display:flex; gap:10px;">
+                <button onclick="addNewProductRow()" class="btn-ui" style="background:#28a745;"><i class="fas fa-plus"></i> Add New Product</button>
+                <button onclick="saveAllProducts()" class="btn-ui" style="background:#007bff;"><i class="fas fa-save"></i> Save Changes</button>
+                <button onclick="closeModal('productMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            </div>
+        </div>
+        <div style="padding:20px; flex:1; overflow-y:auto; background:#fff;">
+            <table class="mgmt-table">
+                <thead>
+                    <tr>
+                        <th>Source File</th>
+                        <th>Product Name</th>
+                        <th>Size</th>
+                        <th>Base Price</th>
+                        <th>Case Price</th>
+                        <th>Box Price</th>
+                        <th>Sleeve Price</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productMaintBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map;
@@ -155,6 +191,8 @@
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
+            // Preservation of original globalProducts array clearing if needed
+            globalProducts = []; 
             for (const path of productFiles) {
                 const res = await fetch(`${REPO_BASE}/${path}`);
                 const json = await res.json();
@@ -188,7 +226,9 @@
                             name: p[0].trim(), 
                             size: p[1]?.trim() || '', 
                             price: parseFloat(p[2]) || 0,
-                            units: availableUnits
+                            units: availableUnits,
+                            source: path,
+                            active: true // Default status
                         });
                     }
                 });
@@ -200,9 +240,11 @@
     function populateDropdowns() {
         const d1 = document.getElementById('prodSelect1');
         const d2 = document.getElementById('prodSelect2');
-        const options = globalProducts.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
-        d1.innerHTML += options;
-        d2.innerHTML += options;
+        // FILTER: Only show active products in the delivery dropdowns
+        const activeProds = globalProducts.filter(p => p.active !== false);
+        const options = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
+        d1.innerHTML = '<option value="">-- Select Product 1 --</option>' + options;
+        d2.innerHTML = '<option value="">-- Select Product 2 --</option>' + options;
     }
 
     function updateSettings() {
@@ -290,8 +332,9 @@
 
     function addProductToList(idx) {
         if (idx === "") return;
-        const product = globalProducts[idx];
-        /* ADDED: Set default price to the first available unit price if list exists */
+        // Adjusted to use globalProducts filter indices correctly
+        const activeProds = globalProducts.filter(p => p.active !== false);
+        const product = activeProds[idx];
         const initialPrice = product.units.length > 0 ? product.units[0].price : product.price;
         const initialUnit = product.units.length > 0 ? product.units[0].label : 'Each';
         
@@ -309,7 +352,6 @@
         syncSlipProducts();
     }
 
-    /* ADDED: Handle unit selection and price lookup */
     function updateListUnit(index, unitLabel) {
         const product = currentStopProducts[index];
         const unitData = product.units.find(u => u.label === unitLabel);
@@ -338,9 +380,8 @@
             const lineTotal = p.selectedPrice * p.qty;
             subtotal += lineTotal;
             
-            /* ADDED: Unit dropdown for each line */
             let unitDropdown = `<select class="unit-select no-print" onchange="updateListUnit(${index}, this.value)">`;
-            if (p.units.length > 0) {
+            if (p.units && p.units.length > 0) {
                 p.units.forEach(u => {
                     unitDropdown += `<option value="${u.label}" ${p.selectedUnit === u.label ? 'selected' : ''}>${u.label}</option>`;
                 });
@@ -363,7 +404,9 @@
             </tr>`;
         });
 
-        const productOptions = globalProducts.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
+        // Filter active products for dropdown
+        const activeProds = globalProducts.filter(p => p.active !== false);
+        const productOptions = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
 
         preview.innerHTML = `
             <div class="culligan-slip">
@@ -448,6 +491,89 @@
 
     function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function emailSlip() { html2pdf().from(document.getElementById('slipPreview')).save('Delivery_Slip.pdf'); }
+
+    /* ========================================== */
+    /* ADDED: PRODUCT MAINTENANCE CRUD LOGIC      */
+    /* ========================================== */
+
+    function openProductMaintenance() {
+        renderProductMaintenanceTable();
+        openModal('productMaintModal');
+    }
+
+    function renderProductMaintenanceTable() {
+        const body = document.getElementById('productMaintBody');
+        body.innerHTML = "";
+        
+        globalProducts.forEach((p, idx) => {
+            const row = document.createElement('tr');
+            if (p.active === false) row.classList.add('deactivated');
+            
+            // Extraction of unit prices for easy editing
+            const getPrice = (label) => p.units.find(u => u.label.toLowerCase() === label.toLowerCase())?.price || 0;
+
+            row.innerHTML = `
+                <td><select class="maint-input" onchange="updateMaintField(${idx}, 'source', this.value)">
+                    <option value="Products/Water.csv" ${p.source === 'Products/Water.csv' ? 'selected' : ''}>Water</option>
+                    <option value="Products/Coffee.csv" ${p.source === 'Products/Coffee.csv' ? 'selected' : ''}>Coffee</option>
+                </select></td>
+                <td><input type="text" class="maint-input" value="${p.name}" onchange="updateMaintField(${idx}, 'name', this.value)"></td>
+                <td><input type="text" class="maint-input" value="${p.size}" onchange="updateMaintField(${idx}, 'size', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${p.price}" onchange="updateMaintField(${idx}, 'price', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Case')}" onchange="updateMaintUnitPrice(${idx}, 'Case', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Box')}" onchange="updateMaintUnitPrice(${idx}, 'Box', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Sleeve')}" onchange="updateMaintUnitPrice(${idx}, 'Sleeve', this.value)"></td>
+                <td><strong>${p.active !== false ? 'ACTIVE' : 'INACTIVE'}</strong></td>
+                <td>
+                    <button class="btn-ui" style="background:${p.active !== false ? '#dc3545' : '#28a745'}; padding: 5px 10px;" onclick="toggleProductStatus(${idx})">
+                        ${p.active !== false ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                </td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    function updateMaintField(idx, field, value) {
+        if (field === 'price') value = parseFloat(value);
+        globalProducts[idx][field] = value;
+    }
+
+    function updateMaintUnitPrice(idx, label, value) {
+        const val = parseFloat(value);
+        const unitIdx = globalProducts[idx].units.findIndex(u => u.label === label);
+        if (unitIdx > -1) {
+            globalProducts[idx].units[unitIdx].price = val;
+        } else if (val > 0) {
+            globalProducts[idx].units.push({ label: label, price: val });
+        }
+    }
+
+    function toggleProductStatus(idx) {
+        globalProducts[idx].active = globalProducts[idx].active !== false ? false : true;
+        renderProductMaintenanceTable();
+        populateDropdowns();
+    }
+
+    function addNewProductRow() {
+        globalProducts.push({
+            name: "New Product",
+            size: "000ml",
+            price: 0,
+            units: [],
+            source: "Products/Water.csv",
+            active: true
+        });
+        renderProductMaintenanceTable();
+    }
+
+    function saveAllProducts() {
+        // Logic to finalize data structure. In a full system, this would trigger GitHub API Writes.
+        alert("Product database updated locally. To persist permanently, ensure CSV files are synchronized via server-side update.");
+        populateDropdowns();
+        closeModal('productMaintModal');
+    }
+
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
