@@ -31,7 +31,6 @@
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
         .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 150px; cursor: crosshair; }
         .red-text { color: #d00; font-weight: bold; }
-        /* ADDED: Styles for product selection */
         .product-selector-row { display: flex; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; }
         .product-select { flex: 2; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
         .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
@@ -82,7 +81,6 @@
                 <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
                 <button class="btn-ui" style="background:#28a745;" onclick="alert('Manual Entry Mode Active')"><i class="fas fa-phone"></i> Call-In Order</button>
                 <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
-                <!-- ADDED: Settings Section for Pricing/Tax -->
                 <div style="margin-left:auto; border:1px solid #ccc; padding:10px; background:white; border-radius:5px; font-size:0.8rem;">
                     <strong>App Settings:</strong><br>
                     <label><input type="checkbox" id="togglePricing" checked onchange="updateSettings()"> Show Pricing</label><br>
@@ -114,7 +112,6 @@
             </div>
         </div>
         <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
-            <!-- ADDED: Product Selectors Above Slip -->
             <div class="product-selector-row">
                 <select id="prodSelect1" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 1 --</option></select>
                 <input type="number" id="prodQty1" class="qty-input" value="1" onchange="syncSlipProducts()">
@@ -136,7 +133,6 @@
     const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
     let sigCanvas, sigCtx, drawing = false;
 
-    /* ADDED: Global App State */
     let globalProducts = [];
     let appSettings = { showPricing: true, taxLabel: "GST", taxRate: 0.05 };
 
@@ -146,18 +142,15 @@
         L.marker(warehouseCoord).addTo(map).bindPopup("<b>Warehouse</b>").openPopup();
         window.addEventListener('resize', () => { if (map) map.invalidateSize(); });
         await loadDynamicRoutes(); 
-        await loadProductList(); /* ADDED: Load products on startup */
+        await loadProductList(); 
     }
 
-    /* ADDED: Product Loading Functionality */
+    /* UPDATED: Loading specifically from Products/Water.csv and Products/Coffee.csv */
     async function loadProductList() {
+        const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
-            const response = await fetch(`${REPO_BASE}/products`);
-            const contents = await response.json();
-            const csvFiles = contents.filter(item => item.name.toLowerCase().endsWith('.csv'));
-            
-            for (const file of csvFiles) {
-                const res = await fetch(`${REPO_BASE}/${file.path}`);
+            for (const path of productFiles) {
+                const res = await fetch(`${REPO_BASE}/${path}`);
                 const json = await res.json();
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
@@ -167,7 +160,7 @@
                 });
             }
             populateDropdowns();
-        } catch (e) { console.error("Error loading products", e); }
+        } catch (e) { console.error("Error loading product files", e); }
     }
 
     function populateDropdowns() {
@@ -178,7 +171,6 @@
         d2.innerHTML += options;
     }
 
-    /* ADDED: Settings Management */
     function updateSettings() {
         appSettings.showPricing = document.getElementById('togglePricing').checked;
         appSettings.taxLabel = document.getElementById('taxType').value;
@@ -256,19 +248,17 @@
     function optimizeCurrent() { alert("Route re-sequenced."); }
     function downloadBackup() { alert("Backup system ready."); }
 
-    /* ADDED: Helper to refresh slip content based on dropdown selections */
     function syncSlipProducts() {
         const stop = window.currentActiveStop;
         if (stop) openStopSlip(stop);
     }
 
     function openStopSlip(stop) {
-        window.currentActiveStop = stop; /* ADDED: Save stop context for syncing */
+        window.currentActiveStop = stop; 
         const preview = document.getElementById('slipPreview');
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
-        /* ADDED: Dynamic Table Logic */
         let rowsHtml = "";
         let subtotal = 0;
         const sel1Idx = document.getElementById('prodSelect1').value;
