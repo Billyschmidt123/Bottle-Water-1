@@ -114,7 +114,6 @@
             <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
             <div style="display:flex; gap:10px;">
                 <button onclick="clearSignature()" class="btn-ui" style="background:#ffc107; color:#212529;"><i class="fas fa-eraser"></i> Clear Sig</button>
-                <!-- ADDED CHANGE: Renamed Print to Email -->
                 <button onclick="emailSlip()" class="btn-ui" style="background:#fff; color:#28a745;"><i class="fas fa-envelope"></i> Email</button>
                 <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
@@ -245,6 +244,12 @@
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
+        /* ADDED: LOGIC TO STRIP COMPANY ID FROM NAME FOR DISPLAY */
+        let cleanName = stop.name;
+        if (cleanName.includes('-')) {
+            cleanName = cleanName.split('-').slice(1).join('-').trim();
+        }
+
         preview.innerHTML = `
             <div class="culligan-slip">
                 <div style="display:flex; justify-content:space-between; align-items:start;">
@@ -272,9 +277,8 @@
                             <span>${dateStr}</span>
                         </div>
                         <div style="display:flex;">
-                            <!-- ADDED CHANGE: Renamed Company ID label to COMPANY -->
                             <span style="width:100px; font-weight:bold;">COMPANY:</span>
-                            <span>${stop.name}<br>${stop.address}</span>
+                            <span>${cleanName}<br>${stop.address}</span>
                         </div>
                     </div>
                 </div>
@@ -362,7 +366,6 @@
         if (sigCtx && sigCanvas) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
     }
 
-    /* ADDED CHANGE: Renamed function from printSlip to emailSlip */
     function emailSlip() {
         const element = document.getElementById('slipPreview');
         const opt = {
