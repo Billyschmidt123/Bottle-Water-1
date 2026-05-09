@@ -147,12 +147,18 @@
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
             
-            // Map CSV columns: ID (0), Address (1), Phone (2), Company Name (3)
+            // Map CSV columns: ID (0), Address (1), Phone (2), Company Name (3), Addr Parts (4-7)
             const stops = lines.slice(1).map(line => {
                 const parts = line.split(',');
+                /* ADDED FIX FOR ADDRESS COMBINATION */
+                const combinedAddr = [parts[4], parts[5], parts[6], parts[7]]
+                                     .filter(p => p && p.trim() !== '' && p.trim().toUpperCase() !== 'NONE')
+                                     .join(' ').trim();
+                
                 return { 
                     id: parts[0]?.trim(), 
-                    address: parts[1]?.trim(), 
+                    // address: parts[1]?.trim(), // PRESERVED ORIGINAL LINE
+                    address: combinedAddr || parts[1]?.trim(), // ADDED: USES COMBINED COLUMNS 5-8
                     phone: parts[2]?.trim() || '---',
                     company: parts[3]?.trim() || parts[0]?.trim() // Column 4
                 };
