@@ -36,6 +36,8 @@
         .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
         .del-btn { color: #dc3545; cursor: pointer; margin-left: 10px; font-size: 1rem; }
         .del-btn:hover { color: #a71d2a; }
+        /* Unit selector styling */
+        .unit-select { padding: 2px; font-size: 0.75rem; border-radius: 3px; border: 1px solid #ccc; }
         @media print { .no-print { display: none !important; } .only-print { display: inline !important; } }
         .only-print { display: none; }
     </style>
@@ -116,7 +118,6 @@
             </div>
         </div>
         <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
-            <!-- WRAPPED ORIGINAL SELECTORS TO PRESERVE THEM BUT HIDDEN PER REQUEST TO REMOVE 2ND LIST -->
             <div class="product-selector-row" style="display:none;">
                 <select id="prodSelect1" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 1 --</option></select>
                 <input type="number" id="prodQty1" class="qty-input" value="1" onchange="syncSlipProducts()">
@@ -159,9 +160,37 @@
                 const json = await res.json();
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
+                
+                /* ADDED: Header detection for unit types */
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const unitMap = {
+                    'case': headers.indexOf('case'),
+                    'box': headers.indexOf('box'),
+                    'sleeve': headers.indexOf('sleeve'),
+                    'bottle': headers.indexOf('bottle') !== -1 ? headers.indexOf('bottle') : headers.indexOf('jug'),
+                    'price_case': headers.indexOf('price case'),
+                    'price_box': headers.indexOf('price box'),
+                    'price_sleeve': headers.indexOf('price sleeve'),
+                    'price_bottle': headers.indexOf('price bottle') !== -1 ? headers.indexOf('price bottle') : headers.indexOf('price jug')
+                };
+
                 lines.slice(1).forEach(line => {
                     const p = line.split(',');
-                    if(p[0]) globalProducts.push({ name: p[0].trim(), size: p[1]?.trim() || '', price: parseFloat(p[2]) || 0 });
+                    if(p[0]) {
+                        /* ADDED: Logic to see which units are available based on header presence and row value */
+                        let availableUnits = [];
+                        if (unitMap.case !== -1 && p[unitMap.case]) availableUnits.push({label: 'Case', price: parseFloat(p[unitMap.price_case]) || 0});
+                        if (unitMap.box !== -1 && p[unitMap.box]) availableUnits.push({label: 'Box', price: parseFloat(p[unitMap.price_box]) || 0});
+                        if (unitMap.sleeve !== -1 && p[unitMap.sleeve]) availableUnits.push({label: 'Sleeve', price: parseFloat(p[unitMap.price_sleeve]) || 0});
+                        if (unitMap.bottle !== -1 && p[unitMap.bottle]) availableUnits.push({label: 'Bottle', price: parseFloat(p[unitMap.price_bottle]) || 0});
+
+                        globalProducts.push({ 
+                            name: p[0].trim(), 
+                            size: p[1]?.trim() || '', 
+                            price: parseFloat(p[2]) || 0,
+                            units: availableUnits
+                        });
+                    }
                 });
             }
             populateDropdowns();
@@ -262,13 +291,33 @@
     function addProductToList(idx) {
         if (idx === "") return;
         const product = globalProducts[idx];
-        currentStopProducts.push({ ...product, qty: 1 });
+        /* ADDED: Set default price to the first available unit price if list exists */
+        const initialPrice = product.units.length > 0 ? product.units[0].price : product.price;
+        const initialUnit = product.units.length > 0 ? product.units[0].label : 'Each';
+        
+        currentStopProducts.push({ 
+            ...product, 
+            qty: 1, 
+            selectedPrice: initialPrice, 
+            selectedUnit: initialUnit 
+        });
         syncSlipProducts();
     }
 
     function updateListQty(index, qty) {
         currentStopProducts[index].qty = parseInt(qty) || 0;
         syncSlipProducts();
+    }
+
+    /* ADDED: Handle unit selection and price lookup */
+    function updateListUnit(index, unitLabel) {
+        const product = currentStopProducts[index];
+        const unitData = product.units.find(u => u.label === unitLabel);
+        if (unitData) {
+            product.selectedUnit = unitLabel;
+            product.selectedPrice = unitData.price;
+            syncSlipProducts();
+        }
     }
 
     function removeProductFromList(index) {
@@ -286,12 +335,27 @@
         let subtotal = 0;
 
         currentStopProducts.forEach((p, index) => {
-            const lineTotal = p.price * p.qty;
+            const lineTotal = p.selectedPrice * p.qty;
             subtotal += lineTotal;
+            
+            /* ADDED: Unit dropdown for each line */
+            let unitDropdown = `<select class="unit-select no-print" onchange="updateListUnit(${index}, this.value)">`;
+            if (p.units.length > 0) {
+                p.units.forEach(u => {
+                    unitDropdown += `<option value="${u.label}" ${p.selectedUnit === u.label ? 'selected' : ''}>${u.label}</option>`;
+                });
+            } else {
+                unitDropdown += `<option>Each</option>`;
+            }
+            unitDropdown += `</select>`;
+
             rowsHtml += `<tr>
                 <td><input type="number" class="qty-input no-print" value="${p.qty}" onchange="updateListQty(${index}, this.value)"><span class="only-print">${p.qty}</span></td>
                 <td>${p.name} ${p.size}</td>
-                <td>${appSettings.showPricing ? '$' + p.price.toFixed(2) : '--'}</td>
+                <td>
+                    ${unitDropdown} <span class="only-print">(${p.selectedUnit})</span>
+                    ${appSettings.showPricing ? '$' + p.selectedPrice.toFixed(2) : '--'}
+                </td>
                 <td>
                     ${appSettings.showPricing ? '$' + lineTotal.toFixed(2) : '--'}
                     <i class="fas fa-times del-btn no-print" onclick="removeProductFromList(${index})"></i>
@@ -323,7 +387,6 @@
                     </div>
                 </div>
 
-                <!-- MOVED: Product list drop down to directly above table -->
                 <div class="no-print" style="margin-top: 20px; margin-bottom: 5px;">
                     <select class="product-select" style="width: 100%; border: 2px solid #004a99;" onchange="addProductToList(this.value)">
                         <option value="">-- Select Product to Add --</option>
@@ -332,7 +395,7 @@
                 </div>
 
                 <table class="c-table">
-                    <thead><tr style="background:#eee;"><th>QTY.</th><th>DESCRIPTION</th><th>EACH</th><th>TOTAL</th></tr></thead>
+                    <thead><tr style="background:#eee;"><th>QTY.</th><th>DESCRIPTION</th><th>UNIT / EACH</th><th>TOTAL</th></tr></thead>
                     <tbody>
                         ${rowsHtml || '<tr><td colspan="4" style="text-align:center; padding:20px;">No Products Added</td></tr>'}
                     </tbody>
