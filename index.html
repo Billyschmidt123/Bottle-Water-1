@@ -373,19 +373,86 @@
         theadRow.innerHTML = html;
     }
 
-    // === ADDED: Load all route customers for maintenance with scan progress ===
-    async function loadAllRouteCustomersForMaintenance() {
-        customerMaintList = [];
-        try {
-            const res = await fetch(`${REPO_BASE}/routes`);
-            const contents = await res.json();
-            if (!Array.isArray(contents)) {
-                console.error("Customer Maint Route API error", contents);
-                totalRouteFiles = 0;
-                scannedRouteFiles = 0;
-                updateCustomerScanProgress();
-                return;
+   // === REPLACEMENT: Load all route customers AND extract real CSV headers ===
+async function loadAllRouteCustomersForMaintenance() {
+    customerMaintList = [];
+    customerMaintHeaders = [];   // reset
+    let headerSet = new Set();   // collect unique headers
+
+    try {
+        const res = await fetch(`${REPO_BASE}/routes`);
+        const contents = await res.json();
+
+        if (!Array.isArray(contents)) {
+            console.error("Customer Maint Route API error", contents);
+            totalRouteFiles = 0;
+            scannedRouteFiles = 0;
+            updateCustomerScanProgress();
+            return;
+        }
+
+        const files = contents.filter(f => f.name.endsWith('.csv'));
+        totalRouteFiles = files.length;
+        scannedRouteFiles = 0;
+        updateCustomerScanProgress();
+
+        for (const file of files) {
+            try {
+                const r = await fetch(`${REPO_BASE}/${file.path}`);
+                const json = await r.json();
+
+                if (!json || !json.content) {
+                    console.error("Customer Maint CSV API error", file.path, json);
+                    scannedRouteFiles++;
+                    updateCustomerScanProgress();
+                    continue;
+                }
+
+                const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
+
+                if (lines.length === 0) continue;
+
+                // 1️⃣ Extract REAL CSV headers
+                const rawHeaders = lines[0].split(',').map(h => h.trim());
+                rawHeaders.forEach(h => headerSet.add(h));
+
+                // 2️⃣ Parse rows using real headers
+                lines.slice(1).forEach((line, idx) => {
+                    const cols = line.split(',');
+                    const rec = {};
+
+                    rawHeaders.forEach((h, i) => {
+                        rec[h] = cols[i] || "";
+                    });
+
+                    // internal metadata
+                    rec.__routePath = file.path;
+                    rec.__rowIndex = idx + 1;
+                    rec.__deleted = false;
+
+                    customerMaintList.push(rec);
+                });
+
+            } catch (innerErr) {
+                console.error("Customer Maint CSV load error", file.path, innerErr);
             }
+
+            scannedRouteFiles++;
+            updateCustomerScanProgress();
+        }
+
+        // 3️⃣ Finalize unified header list
+        customerMaintHeaders = Array.from(headerSet);
+
+    } catch (e) {
+        console.error("Customer Maint master load error", e);
+        totalRouteFiles = 0;
+        scannedRouteFiles = 0;
+        updateCustomerScanProgress();
+    }
+}
+
             const files = contents.filter(f => f.name.endsWith('.csv'));
             totalRouteFiles = files.length;
             scannedRouteFiles = 0;
