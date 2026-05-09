@@ -39,11 +39,7 @@
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 
-        /* ADDED: SLIP STYLING FOR STOP LIST OPENING */
         #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
-        .slip-header { border-bottom: 3px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
-
-        /* ADDED: CULLIGAN SLIP SPECIFIC STYLES (MATCHING IMAGE) */
         .culligan-slip { font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; max-width: 800px; margin: auto; background: #fff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
@@ -107,7 +103,6 @@
     </div>
 </div>
 
-<!-- MODAL FOR STOP SLIP -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -119,9 +114,7 @@
             </div>
         </div>
         <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
-            <div id="slipPreview">
-                <!-- Content injected via openStopSlip() -->
-            </div>
+            <div id="slipPreview"></div>
         </div>
     </div>
 </div>
@@ -134,14 +127,12 @@
     const REPO_OWNER = "Billyschmidt123";
     const REPO_NAME = "Bottle-Water-1";
     const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
-
     let sigCanvas, sigCtx, drawing = false;
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.marker(warehouseCoord).addTo(map).bindPopup("<b>Warehouse</b>").openPopup();
-        
         window.addEventListener('resize', () => { if (map) map.invalidateSize(); });
         await loadDynamicRoutes(); 
     }
@@ -149,62 +140,32 @@
     async function loadDynamicRoutes() {
         const dropdown = document.getElementById('routeDropdown');
         const mgrTable = document.getElementById('mgrTableBody');
-        dropdown.innerHTML = '<option>Scanning routes...</option>';
-
         try {
             const response = await fetch(`${REPO_BASE}/routes`);
-            if (!response.ok) throw new Error("Folder 'routes' not found");
-            
             const contents = await response.json();
-            let options = [];
-
-            contents.forEach(item => {
-                if (item.type === 'file' && item.name.toLowerCase().endsWith('.csv')) {
-                    options.push({ name: item.name.replace('.csv', ''), path: item.path });
-                }
-            });
-
-            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + 
-                options.map(o => `<option value="${o.path}">${o.name}</option>`).join('');
-
-            mgrTable.innerHTML = options.map(o => `
-                <tr>
-                    <td>${o.name}</td>
-                    <td>${o.path}</td>
-                    <td>CSV Manifest</td>
-                </tr>
-            `).join('');
-
-        } catch (e) {
-            dropdown.innerHTML = '<option>Error loading routes</option>';
-            mgrTable.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Connection Error</td></tr>';
-        }
+            let options = contents.filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.csv'))
+                                  .map(o => ({ name: o.name.replace('.csv', ''), path: o.path }));
+            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + options.map(o => `<option value="${o.path}">${o.name}</option>`).join('');
+            mgrTable.innerHTML = options.map(o => `<tr><td>${o.name}</td><td>${o.path}</td><td>CSV Manifest</td></tr>`).join('');
+        } catch (e) { console.error("Error loading routes", e); }
     }
 
     async function loadSelectedRoute() {
         const filePath = document.getElementById('routeDropdown').value;
-        const stopList = document.getElementById('stopList');
         if (!filePath) return;
-
-        stopList.innerHTML = '<div style="text-align:center; padding-top:40px;">Loading Manifest...</div>';
         markers.forEach(m => map.removeLayer(m));
         markers = [];
-
         try {
             const res = await fetch(`${REPO_BASE}/${filePath}`);
             const json = await res.json();
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-            
             const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
             const stops = lines.slice(1).map(line => {
                 const parts = line.split(',');
                 return { name: parts[0]?.trim(), address: parts[1]?.trim(), phone: parts[2]?.trim() || '---' };
             });
-
             renderManifest(stops);
-        } catch (e) {
-            stopList.innerHTML = '<div style="color:red; padding:20px;">Data parse error.</div>';
-        }
+        } catch (e) { console.error("Parse error", e); }
     }
 
     function renderManifest(stops) {
@@ -213,22 +174,20 @@
         stops.forEach((stop, i) => {
             const lat = warehouseCoord[0] + (Math.random() - 0.5) * 0.1;
             const lng = warehouseCoord[1] + (Math.random() - 0.5) * 0.1;
-            const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${stop.name}</b>`);
+            const marker = L.marker([lat, lng]).addTo(map);
             markers.push(marker);
 
-            /* ADDED: STRIP ID FROM NAME FOR MANIFEST DISPLAY */
-            let displayTitle = stop.name;
-            if (displayTitle.includes('-')) {
-                displayTitle = displayTitle.split('-').slice(1).join('-').trim();
+            // EXTRACT COMPANY NAME (Removes ID before the hyphen)
+            let displayName = stop.name;
+            if (displayName.includes('-')) {
+                displayName = displayName.split('-').slice(1).join('-').trim();
             }
 
             const card = document.createElement('div');
             card.className = 'delivery-card';
-            card.innerHTML = `<strong>${i+1}. ${displayTitle}</strong><br><small>${stop.address}</small>`;
-            
+            card.innerHTML = `<strong>${i+1}. ${displayName}</strong><br><small>${stop.address}</small>`;
             card.onclick = () => {
                 map.flyTo([lat, lng], 15);
-                marker.openPopup();
                 document.getElementById('activeAddress').innerText = stop.address;
                 document.getElementById('activePhone').innerText = stop.phone;
                 openStopSlip(stop);
@@ -243,14 +202,14 @@
     function startRoute() { alert("GPS Logging Started."); }
     function runEndOfDay() { if(confirm("Complete today's route?")) location.reload(); }
     function optimizeCurrent() { alert("Route re-sequenced."); }
-    function downloadBackup() { alert("Backup system ready. Generating CSV snapshot..."); }
+    function downloadBackup() { alert("Backup system ready."); }
 
     function openStopSlip(stop) {
         const preview = document.getElementById('slipPreview');
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
-        /* ADDED: LOGIC TO STRIP COMPANY ID FROM NAME FOR SLIP DISPLAY */
+        // EXTRACT COMPANY NAME FOR SLIP (Removes ID before the hyphen)
         let cleanName = stop.name;
         if (cleanName.includes('-')) {
             cleanName = cleanName.split('-').slice(1).join('-').trim();
@@ -258,7 +217,7 @@
 
         preview.innerHTML = `
             <div class="culligan-slip">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div style="display:flex; justify-content:space-between;">
                     <div>
                         <h2 style="font-size:2.5rem; margin:0; font-family:'Brush Script MT', cursive;">Culligan</h2>
                         <p style="margin:0; font-weight:bold; letter-spacing:2px;">BOTTLED WATER</p>
@@ -268,69 +227,30 @@
                         <p class="red-text" style="font-size:1.5rem; border:1px solid #d00; padding:5px;">100131</p>
                     </div>
                 </div>
-
                 <div style="display:flex; gap:20px; margin-top:20px;">
-                    <div style="flex:1;">
-                        <p style="font-size:0.7rem; margin:0;">CULLIGAN BOTTLED WATER</p>
-                        <p style="font-size:0.7rem; margin:0;">598316 ALBERTA LTD.</p>
-                        <p style="font-size:0.7rem; margin:0;">12001-99 AVENUE</p>
-                        <p style="font-size:0.7rem; margin:0;">GRANDE PRAIRIE, AB T8W 0J7</p>
-                        <p style="font-size:0.7rem; margin:0;">PHONE: (780) 532-8584</p>
+                    <div style="flex:1; font-size:0.7rem;">
+                        <p>CULLIGAN BOTTLED WATER<br>598316 ALBERTA LTD.<br>12001-99 AVENUE<br>GRANDE PRAIRIE, AB T8W 0J7<br>PHONE: (780) 532-8584</p>
                     </div>
                     <div style="flex:2; border:1px solid #000; padding:10px;">
-                        <div style="display:flex; border-bottom:1px solid #000; margin-bottom:5px;">
-                            <span style="width:100px; font-weight:bold;">DATE:</span>
-                            <span>${dateStr}</span>
-                        </div>
-                        <div style="display:flex;">
-                            <span style="width:100px; font-weight:bold;">COMPANY:</span>
-                            <span>${cleanName}<br>${stop.address}</span>
-                        </div>
+                        <p><strong>DATE:</strong> ${dateStr}</p>
+                        <p><strong>COMPANY:</strong> ${cleanName}<br>${stop.address}</p>
                     </div>
                 </div>
-
                 <table class="c-table">
-                    <thead>
-                        <tr style="background:#eee;">
-                            <th style="width:50px;">QTY.</th>
-                            <th>DESCRIPTION</th>
-                            <th style="width:80px;">EACH</th>
-                            <th style="width:100px;">TOTAL</th>
-                        </tr>
-                    </thead>
+                    <thead><tr style="background:#eee;"><th>QTY.</th><th>DESCRIPTION</th><th>EACH</th><th>TOTAL</th></tr></thead>
                     <tbody>
                         <tr><td>4</td><td>PURIFIED WATER 18.9 OR 11.335 Litres</td><td>$8.00</td><td>$32.00</td></tr>
                         <tr><td>4</td><td>BOTTLE DEPOSIT</td><td>$12.00</td><td>$48.00</td></tr>
                         <tr><td>4</td><td>BOTTLE RETURNS</td><td>($12.00)</td><td>($48.00)</td></tr>
                         <tr><td>1</td><td>DELIVERY</td><td>$17.00</td><td>$17.00</td></tr>
-                        <tr style="height:40px;"><td></td><td></td><td></td><td></td></tr>
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="2" style="border:none; font-size:0.6rem; text-align:left;">
-                                G.S.T. #891131088 RT<br>
-                                TERMS OF PAYMENT: CASH OR ON APPROVED CREDIT.<br>
-                                NET 30 DAYS. 2% PER MONTH INTEREST CHARGE ON ALL OVERDUE ACCOUNTS.
-                            </td>
-                            <td style="font-weight:bold; background:#eee;">TOTAL</td>
-                            <td style="font-weight:bold; font-size:1.2rem;">$49.00</td>
-                        </tr>
-                    </tfoot>
+                    <tfoot><tr><td colspan="2">G.S.T. #891131088 RT</td><td style="background:#eee;">TOTAL</td><td>$49.00</td></tr></tfoot>
                 </table>
-
-                <div style="margin-top:20px; border-top:2px solid #000; padding-top:10px;">
-                    <p style="font-size:0.8rem; margin:0 0 5px 0; font-weight:bold;">CUSTOMER SIGNATURE:</p>
+                <div style="margin-top:20px; border-top:2px solid #000;">
+                    <p style="font-weight:bold;">CUSTOMER SIGNATURE:</p>
                     <canvas id="signaturePad" class="sig-canvas"></canvas>
                 </div>
-
-                <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.7rem;">
-                    <div style="display:flex; gap:10px;">
-                        <input type="checkbox"> CASH <input type="checkbox"> MC <input type="checkbox"> VISA
-                    </div>
-                    <div class="red-text">THIS IS NOT YOUR INVOICE. INVOICE TO FOLLOW.</div>
-                </div>
-            </div>
-        `;
+            </div>`;
         openModal('stopModal');
         initSignaturePad();
     }
@@ -339,51 +259,25 @@
         sigCanvas = document.getElementById('signaturePad');
         if (!sigCanvas) return;
         sigCtx = sigCanvas.getContext('2d');
-        
         sigCanvas.width = sigCanvas.offsetWidth;
         sigCanvas.height = sigCanvas.offsetHeight;
         sigCtx.strokeStyle = "#00008b";
         sigCtx.lineWidth = 2;
-
-        const startDrawing = (e) => {
-            drawing = true;
-            sigCtx.beginPath();
-            sigCtx.moveTo(e.offsetX || e.touches[0].clientX - sigCanvas.getBoundingClientRect().left, e.offsetY || e.touches[0].clientY - sigCanvas.getBoundingClientRect().top);
-        };
-
+        const startDrawing = (e) => { drawing = true; sigCtx.beginPath(); };
         const draw = (e) => {
             if (!drawing) return;
-            e.preventDefault();
             const x = e.offsetX || e.touches[0].clientX - sigCanvas.getBoundingClientRect().left;
             const y = e.offsetY || e.touches[0].clientY - sigCanvas.getBoundingClientRect().top;
             sigCtx.lineTo(x, y);
             sigCtx.stroke();
         };
-
         sigCanvas.addEventListener('mousedown', startDrawing);
         sigCanvas.addEventListener('mousemove', draw);
         sigCanvas.addEventListener('mouseup', () => drawing = false);
-        sigCanvas.addEventListener('touchstart', startDrawing);
-        sigCanvas.addEventListener('touchmove', draw);
-        sigCanvas.addEventListener('touchend', () => drawing = false);
     }
 
-    function clearSignature() {
-        if (sigCtx && sigCanvas) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-    }
-
-    function emailSlip() {
-        const element = document.getElementById('slipPreview');
-        const opt = {
-            margin: 0.5,
-            filename: 'Culligan_Delivery_Slip.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    }
-
+    function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    function emailSlip() { html2pdf().from(document.getElementById('slipPreview')).save('Delivery_Slip.pdf'); }
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
