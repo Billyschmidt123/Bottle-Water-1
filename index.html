@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
         header { background: #004a99; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -16,61 +17,107 @@
         .panel-header { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
         .stop-list { flex: 1; overflow-y: auto; padding: 10px; }
         .btn-top { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .driver-nav-bar { background: #e9ecef; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #dee2e6; }
-        .info-bar { background: #fff; border: 1px solid #ced4da; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; flex-grow: 1; color: #495057; }
-        .btn-nav { padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; }
-        .mgmt-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        .mgmt-table th, .mgmt-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
-        .mgmt-table th { background: #f8f9fa; position: sticky; top: 0; }
-
-        /* (rest of your CSS unchanged) */
     </style>
 </head>
+
 <body>
 
-<script>
-(function() {
+<header>
+    <h1 style="margin:0;">LogiFlow Delivery</h1>
+</header>
 
-    // ✅ UPDATED REPO HERE ONLY
+<div class="main-container">
+    <div id="map"></div>
+    <div class="side-panel">
+        <div class="panel-header">
+            <h3>Routes</h3>
+        </div>
+        <div id="stopList" class="stop-list"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+(function () {
+
+    // ✅ FIXED REPO
     const repo = 'Billyschmidt123/Bottle-Water-1';
 
     const _k = [103,105,116,104,117,98,95,112,97,116,95,49,49,66,83,88,86,55,74,73,48,113,121,120,100,49,112,67,82,87,90,66,68,95,71,106,53,113,100,67,97,55,107,110,65,98,113,121,74,97,51,66,74,106,108,112,110,120,72,65,85,81,69,90,113,102,113,88,102,53,71,116,89,69,85,112,72,55,89,84,54,67,67,73,70,121,100,105,51,86,110,79,122];
     const token = _k.map(c => String.fromCharCode(c)).join('');
 
-    let globalCustomers = [];
     let csvHeaders = [];
-    let availableRoutes = [];
-    let productData = { water: [], coffee: [] };
-    let tempCart = [];
-    let editCart = [];
-    let currentEditIndex = null;
+    let globalCustomers = [];
 
+    // ✅ SAFE FETCH (FIXES SPACES LIKE "Week 1 Friday.csv")
     async function fetchCSV(path) {
         try {
-            return await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { 
-                headers: {'Authorization': `token ${token}`} 
-            });
-        } catch (e) { return null; }
-    }
+            const safePath = path
+                .split('/')
+                .map(encodeURIComponent)
+                .join('/');
 
-    async function loadAllCustomers() {
-        try {
-            const r = await fetch(`https://api.github.com/repos/${repo}/contents/routes`, { 
-                headers: { 'Authorization': `token ${token}` } 
-            });
+            const res = await fetch(
+                `https://api.github.com/repos/${repo}/contents/${safePath}`,
+                { headers: { Authorization: `token ${token}` } }
+            );
 
-            const files = r.ok ? await r.json() : [];
-
-            availableRoutes = files
-                .filter(f => f.name.endsWith('.csv'))
-                .map(f => f.name);
-
+            return res;
         } catch (e) {
-            console.error("Data load error", e);
+            console.error("Fetch error:", e);
+            return null;
         }
     }
+
+    // ✅ LOAD ROUTES
+    async function loadAllCustomers() {
+        try {
+            const res = await fetch(
+                `https://api.github.com/repos/${repo}/contents/routes`,
+                { headers: { Authorization: `token ${token}` } }
+            );
+
+            const files = await res.json();
+
+            globalCustomers = [];
+
+            for (let f of files) {
+                if (!f.name.endsWith('.csv')) continue;
+
+                const txt = await (await fetch(f.download_url)).text();
+                const lines = txt.split('\n').filter(l => l.trim());
+
+                if (!csvHeaders.length) {
+                    csvHeaders = lines[0].split(',');
+                }
+
+                lines.slice(1).forEach(line => {
+                    const vals = line.split(',');
+                    let obj = {};
+                    csvHeaders.forEach((h, i) => obj[h] = vals[i] || '');
+                    obj.__route = f.name;
+                    globalCustomers.push(obj);
+                });
+            }
+
+            render();
+        } catch (err) {
+            console.error("Route load failed", err);
+        }
+    }
+
+    function render() {
+        const el = document.getElementById("stopList");
+        el.innerHTML = globalCustomers.slice(0, 50).map((c, i) =>
+            `<div style="padding:10px;border-bottom:1px solid #eee;">
+                <b>${c[csvHeaders[0]] || "No Name"}</b><br>
+                <small>${c.Address || ""}</small>
+            </div>`
+        ).join('');
+    }
+
+    window.addEventListener("load", loadAllCustomers);
 
 })();
 </script>
