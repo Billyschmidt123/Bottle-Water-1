@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Culligan Delivery System</title>
+    <title>Culligan Delivery System - Full Build</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,7 +25,7 @@
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         .maint-input { width: 95%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        .search-container { position: relative; width: 400px; }
+        .search-container { position: relative; width: 450px; }
         .maint-search { width: 100%; padding: 10px 15px; border-radius: 5px; border: 2px solid #004a99; font-size: 1rem; outline: none; }
         .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 350px; overflow-y: auto; color: #333; }
         .search-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
@@ -50,6 +50,7 @@
 
 <div class="nav-controls">
     <button class="btn-ui" style="background: #28a745;" onclick="startGPS()"><i class="fas fa-play"></i> START</button>
+    <button class="btn-ui" style="background: #dc3545;" onclick="runEndOfDay()"><i class="fas fa-flag-checkered"></i> FINISH</button>
     <div id="activeAddress" class="info-pill">Address: ---</div>
     <div id="activePhone" class="info-pill" style="flex-grow: 0; min-width: 180px;">Phone: ---</div>
     <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeRoute()"><i class="fas fa-magic"></i> OPTIMIZE</button>
@@ -69,15 +70,18 @@
 
 <!-- Manager Hub -->
 <div id="mgrModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 500px; height: auto;">
+    <div class="modal-content" style="max-width: 650px; height: auto;">
         <div style="background:#004a99; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-tasks"></i> Management Hub</h3>
             <button onclick="closeModal('mgrModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
-        <div style="padding:25px; display: flex; flex-direction: column; gap: 15px;">
+        <div style="padding:25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <button class="btn-ui" style="background:#007bff; justify-content: center; padding: 15px;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
             <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
             <button class="btn-ui" style="background:#e67e22; justify-content: center; padding: 15px;" onclick="exportMasterList()"><i class="fas fa-file-export"></i> Export Master List</button>
+            <button class="btn-ui" style="background:#28a745; justify-content: center; padding: 15px;" onclick="alert('Call-In Mode')"><i class="fas fa-phone-alt"></i> Call-In Order</button>
+            <button class="btn-ui" style="background:#444; justify-content: center; padding: 15px;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup Data</button>
+            <button class="btn-ui" style="background:#f39c12; justify-content: center; padding: 15px;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
         </div>
     </div>
 </div>
@@ -89,7 +93,7 @@
             <div style="display:flex; align-items:center; gap:25px;">
                 <h3 style="margin:0;"><i class="fas fa-address-book"></i> Customer Maintenance</h3>
                 <div class="search-container">
-                    <input type="text" id="maintSearch" class="maint-search" placeholder="Search All Files (Name or Address)..." onkeyup="searchAllFiles(this.value)">
+                    <input type="text" id="maintSearch" class="maint-search" placeholder="Search All Routes (Name or Address)..." onkeyup="searchAllFiles(this.value)">
                     <div id="maintSearchResults" class="search-dropdown"></div>
                 </div>
             </div>
@@ -117,11 +121,12 @@
 
 <!-- Product Maintenance Modal -->
 <div id="prodMaintModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 900px;">
+    <div class="modal-content">
         <div style="background:#6610f2; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-boxes"></i> Product Maintenance</h3>
             <div style="display:flex; gap:10px;">
-                <button onclick="alert('Products Saved')" class="btn-ui" style="background:#28a745;"><i class="fas fa-save"></i> Save Products</button>
+                <button onclick="addNewProductRow()" class="btn-ui" style="background:#28a745;"><i class="fas fa-plus"></i> Add New</button>
+                <button onclick="saveAllProducts()" class="btn-ui" style="background:#007bff;"><i class="fas fa-save"></i> Save Products</button>
                 <button onclick="closeModal('prodMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
         </div>
@@ -129,15 +134,14 @@
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th>Part Number</th>
+                        <th>Source File</th>
                         <th>Description</th>
-                        <th>Standard Price</th>
+                        <th>Size</th>
+                        <th>Base Price</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="prodMaintBody">
-                    <!-- Loaded from Master CSV -->
-                </tbody>
+                <tbody id="prodMaintBody"></tbody>
             </table>
         </div>
     </div>
@@ -149,11 +153,14 @@
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
             <div style="display:flex; gap:10px;">
+                <button onclick="clearSignature()" class="btn-ui" style="background:#ffc107; color:#212529;"><i class="fas fa-eraser"></i> Clear Sig</button>
                 <button onclick="savePDF()" class="btn-ui" style="background:#dc3545;"><i class="fas fa-file-pdf"></i> Save PDF</button>
                 <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
         </div>
-        <div id="slipPreview" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;"></div>
+        <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
+            <div id="slipPreview"></div>
+        </div>
     </div>
 </div>
 
@@ -167,14 +174,47 @@
     
     let allCustomersCache = []; 
     let currentRouteStops = [];
+    let globalProducts = [];
     let activeCustomer = null;
+    let sigCanvas, sigCtx, drawing = false;
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse");
         await loadDynamicRoutes();
+        await loadProductList();
         await preCacheAllRoutes(); 
+    }
+
+    async function loadProductList() {
+        const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
+        globalProducts = [];
+        for (const path of productFiles) {
+            try {
+                const res = await fetch(`${REPO_BASE}/${path}`);
+                const json = await res.json();
+                const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                const lines = decoded.split(/
+?
+/).filter(l => l.trim() !== '');
+                if (lines.length < 2) continue;
+
+                lines.slice(1).forEach(line => {
+                    const p = line.split(',');
+                    if(p[0]) {
+                        globalProducts.push({ 
+                            name: p[0].trim(), 
+                            size: p[1]?.trim() || '', 
+                            price: parseFloat(p[2]) || 0,
+                            source: path,
+                            active: true
+                        });
+                    }
+                });
+            } catch (e) { console.warn("Load failed:", path); }
+        }
+        window.globalActiveOptions = globalProducts.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
     }
 
     async function loadDynamicRoutes() {
@@ -185,7 +225,7 @@
             let options = files.filter(f => f.name.endsWith('.csv'))
                                .map(f => `<option value="${f.path}">${f.name.replace('.csv','')}</option>`);
             dropdown.innerHTML = '<option value="">-- Select Route --</option>' + options.join('');
-        } catch (e) { console.error("Routes failed to load"); }
+        } catch (e) { console.error("Routes failed"); }
     }
 
     async function preCacheAllRoutes() {
@@ -197,7 +237,8 @@
                 if (!file.name.endsWith('.csv')) continue;
                 const contentRes = await fetch(file.download_url);
                 const text = await contentRes.text();
-                const lines = text.split('\n').slice(1);
+                const lines = text.split('
+').slice(1);
                 lines.forEach(line => {
                     const p = line.split(',');
                     if (p[0] && p[0].trim() !== '') {
@@ -212,28 +253,18 @@
                     }
                 });
             }
-        } catch (e) { console.warn("Caching error"); }
+        } catch (e) { console.warn("Cache fail"); }
     }
 
     function searchAllFiles(query) {
         const resultsBox = document.getElementById('maintSearchResults');
         if (query.length < 2) { resultsBox.style.display = 'none'; return; }
-        
-        const filtered = allCustomersCache.filter(c => 
-            c.name.toLowerCase().includes(query.toLowerCase()) || 
-            c.address.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 15);
-
+        const filtered = allCustomersCache.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.address.toLowerCase().includes(query.toLowerCase())).slice(0, 15);
         if (filtered.length > 0) {
-            resultsBox.innerHTML = filtered.map(c => `
-                <div class="search-row" onclick="selectFromSearch('${c.routeFile}', '${c.id}')">
-                    <strong>${c.name}</strong><br>
-                    <small>${c.address} <span style="color:#004a99;">(${c.routeName})</span></small>
-                </div>
-            `).join('');
+            resultsBox.innerHTML = filtered.map(c => `<div class="search-row" onclick="selectFromSearch('${c.routeFile}', '${c.id}')"><strong>${c.name}</strong><br><small>${c.address} (${c.routeName})</small></div>`).join('');
             resultsBox.style.display = 'block';
         } else {
-            resultsBox.innerHTML = '<div style="padding:10px;">No matches found.</div>';
+            resultsBox.innerHTML = '<div style="padding:10px;">No results.</div>';
             resultsBox.style.display = 'block';
         }
     }
@@ -253,55 +284,31 @@
             const res = await fetch(`${REPO_BASE}/${path}`);
             const json = await res.json();
             const text = atob(json.content);
-            const lines = text.split('\n').filter(l => l.trim() !== '').slice(1);
+            const lines = text.split('
+').filter(l => l.trim() !== '').slice(1);
             currentRouteStops = lines.map(line => {
                 const p = line.split(',');
                 return { id: p[0].trim(), company: p[3]?.trim() || 'Customer', address: [p[4], p[5], p[6]].filter(Boolean).join(' '), phone: p[2] || '---' };
             });
             renderManifest();
-        } catch (e) { console.error("Parse error"); }
+        } catch (e) { console.error("Load route fail"); }
     }
 
     function renderManifest() {
         const list = document.getElementById('stopList');
-        list.innerHTML = currentRouteStops.map((stop, i) => `
-            <div class="delivery-card" onclick="openStopSlip(currentRouteStops[${i}])">
-                <strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small>
-            </div>
-        `).join('');
+        list.innerHTML = currentRouteStops.map((stop, i) => `<div class="delivery-card" onclick="openStopSlip(currentRouteStops[${i}])"><strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small></div>`).join('');
     }
 
     function openCustomerMaintenance() {
         const body = document.getElementById('custMaintBody');
-        if (!currentRouteStops.length) {
-            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">No route selected. Use search or the dropdown above.</td></tr>';
-        } else {
-            body.innerHTML = currentRouteStops.map((s, i) => `
-                <tr>
-                    <td><input type="text" class="maint-input" value="${s.id}" onchange="currentRouteStops[${i}].id=this.value"></td>
-                    <td><input type="text" class="maint-input" value="${s.company}" onchange="currentRouteStops[${i}].company=this.value"></td>
-                    <td><input type="text" class="maint-input" value="${s.address}" onchange="currentRouteStops[${i}].address=this.value"></td>
-                    <td><input type="text" class="maint-input" value="${s.phone}" onchange="currentRouteStops[${i}].phone=this.value"></td>
-                    <td><button onclick="currentRouteStops.splice(${i},1); openCustomerMaintenance();" style="color:red; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
-                </tr>
-            `).join('');
-        }
+        body.innerHTML = currentRouteStops.length ? currentRouteStops.map((s, i) => `<tr><td><input class="maint-input" value="${s.id}" onchange="currentRouteStops[${i}].id=this.value"></td><td><input class="maint-input" value="${s.company}" onchange="currentRouteStops[${i}].company=this.value"></td><td><input class="maint-input" value="${s.address}" onchange="currentRouteStops[${i}].address=this.value"></td><td><input class="maint-input" value="${s.phone}" onchange="currentRouteStops[${i}].phone=this.value"></td><td><button onclick="currentRouteStops.splice(${i},1); openCustomerMaintenance();" style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:30px;">Load route to edit.</td></tr>';
         openModal('custMaintModal');
     }
 
     function openProductMaintenance() {
         const body = document.getElementById('prodMaintBody');
-        body.innerHTML = `
-            <tr><td><input class="maint-input" value="1001"></td><td>5 Gallon Water</td><td><input class="maint-input" value="7.50"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>
-            <tr><td><input class="maint-input" value="2002"></td><td>Cooler Rental</td><td><input class="maint-input" value="12.00"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>
-        `;
+        body.innerHTML = globalProducts.map((p, i) => `<tr><td><select class="maint-input"><option ${p.source.includes('Water') ? 'selected':''}>Water</option><option ${p.source.includes('Coffee') ? 'selected':''}>Coffee</option></select></td><td><input class="maint-input" value="${p.name}"></td><td><input class="maint-input" value="${p.size}"></td><td><input class="maint-input" value="${p.price}"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
         openModal('prodMaintModal');
-    }
-
-    function saveAllCustomers() {
-        renderManifest();
-        alert("Changes saved to current session.");
-        closeModal('custMaintModal');
     }
 
     function openStopSlip(stop) {
@@ -309,54 +316,34 @@
         document.getElementById('activeAddress').innerText = stop.address;
         document.getElementById('activePhone').innerText = stop.phone;
         const preview = document.getElementById('slipPreview');
-        preview.innerHTML = `
-            <div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto; color:#000;">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div>
-                        <h1 style="color:#004a99; margin:0;">Culligan Water</h1>
-                        <p>12001 99 Ave, Grande Prairie, AB</p>
-                    </div>
-                    <div style="text-align:right;">
-                        <h3>Delivery Slip</h3>
-                        <p>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    </div>
-                </div>
-                <hr>
-                <div style="margin:20px 0;">
-                    <strong>BILL TO:</strong><br>
-                    ${stop.company}<br>
-                    ${stop.address}
-                </div>
-                <table class="c-table" style="width:100%;">
-                    <thead><tr style="background:#eee;"><th>QTY</th><th>ITEM DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead>
-                    <tbody>
-                        <tr><td><input type="number" style="width:40px; border:none;"></td><td>5 Gallon Water</td><td>$</td><td>$</td></tr>
-                        <tr><td><input type="number" style="width:40px; border:none;"></td><td>Cooler Rental</td><td>$</td><td>$</td></tr>
-                        <tr style="height:150px;"><td colspan="4"></td></tr>
-                    </tbody>
-                </table>
-                <div style="margin-top:30px;">
-                    <p>Signature:</p>
-                    <canvas class="sig-canvas"></canvas>
-                </div>
-            </div>
-        `;
+        preview.innerHTML = `<div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto; color:#000;"><div style="display:flex; justify-content:space-between;"><div><h1 style="color:#004a99; margin:0;">Culligan Water</h1><p>12001 99 Ave, Grande Prairie, AB</p></div><div style="text-align:right;"><h3>Delivery Slip</h3><p>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div></div><hr><div style="margin:20px 0;"><strong>BILL TO:</strong><br>${stop.company}<br>${stop.address}</div><div class="no-print" style="margin-bottom:10px;"><select style="width:100%; padding:8px; border:2px solid #004a99; border-radius:4px;"><option>+ Add Product</option>${window.globalActiveOptions}</select></div><table class="c-table" style="width:100%;"><thead><tr style="background:#eee;"><th>QTY</th><th>ITEM DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead><tbody><tr style="height:150px;"><td colspan="4" style="text-align:center;">Add products to begin slip...</td></tr></tbody></table><div style="margin-top:30px;"><p>Signature:</p><canvas id="signaturePad" class="sig-canvas"></canvas></div></div>`;
         openModal('stopModal');
+        initSignaturePad();
     }
 
-    function savePDF() {
-        const element = document.getElementById('pdfContent');
-        const longDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${longDate}.pdf`;
-        html2pdf().from(element).save(filename);
+    function initSignaturePad() {
+        sigCanvas = document.getElementById('signaturePad');
+        if (!sigCanvas) return;
+        sigCtx = sigCanvas.getContext('2d');
+        sigCanvas.width = sigCanvas.offsetWidth;
+        sigCanvas.height = 120;
+        sigCanvas.onmousedown = () => { drawing = true; sigCtx.beginPath(); };
+        sigCanvas.onmouseup = () => drawing = false;
+        sigCanvas.onmousemove = (e) => { if(!drawing) return; const rect = sigCanvas.getBoundingClientRect(); sigCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top); sigCtx.stroke(); };
     }
 
+    function clearSignature() { if(sigCtx) sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height); }
+    function savePDF() { const longDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${longDate}.pdf`; html2pdf().from(document.getElementById('pdfContent')).save(filename); }
     function startGPS() { alert("GPS Logging Active"); }
     function optimizeRoute() { alert("Optimizing Route Path"); }
-    function exportMasterList() { alert("Master CSV Exported"); }
+    function exportMasterList() { alert("Exporting Master CSV..."); }
+    function downloadBackup() { alert("Downloading SQLite Backup..."); }
+    function runEndOfDay() { alert("Finalizing Daily Routes..."); }
+    function saveAllCustomers() { renderManifest(); alert("Route saved."); closeModal('custMaintModal'); }
+    function saveAllProducts() { alert("Products updated."); closeModal('prodMaintModal'); }
+    function addNewProductRow() { globalProducts.push({name:'New Item', size:'', price:0, source:'Water'}); openProductMaintenance(); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
