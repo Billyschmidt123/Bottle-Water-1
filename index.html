@@ -42,6 +42,15 @@
         .edit-field-row { margin-bottom: 10px; }
         .edit-field-row label { display:block; font-size:0.85rem; margin-bottom:3px; color:#4a5568; }
         .edit-field-row input { width:100%; padding:6px 8px; border:1px solid #cbd5e0; border-radius:4px; font-size:0.9rem; }
+
+        /* === ADDED: Loading overlay + progress bar for customer maintenance === */
+        #customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
+        .progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
+        .progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
+        @keyframes loadingPulse {
+            from { transform: translateX(0); opacity:0.6; }
+            to { transform: translateX(150%); opacity:1; }
+        }
     </style>
 </head>
 <body>
@@ -162,6 +171,19 @@
         <div style="padding:20px; flex:1; overflow-y:auto;" id="customerEditForm"></div>
         <div style="padding:15px; background:#f8fafc; border-top:1px solid #eee; text-align:right;">
             <button class="btn-ui" style="background:#28a745;" onclick="saveCustomerEditModal()"><i class="fas fa-check"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- === ADDED: Loading overlay for customer maintenance === -->
+<div id="customerMaintLoadingOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <div style="padding:20px;">
+            <h3 style="margin-top:0;">Loading customer list</h3>
+            <p>Please wait while route files are scanned...</p>
+            <div class="progress-bar">
+                <div class="progress-inner"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -495,6 +517,7 @@
                 `;
                 container.appendChild(row);
             });
+        openModal('customerEditModal');
     }
 
     function saveCustomerEditModal() {
@@ -569,7 +592,54 @@
         closeModal('customerMaintModal');
     }
 
-    document.addEventListener('DOMContentLoaded', initApp);
-</script>
-</body>
-</html>
+    // === ADDED: FIXES – dynamic headers, working edit/new, loading indicator ===
+    let customerMaintHeaders = [];
+
+    function showCustomerMaintLoading(show) {
+        const el = document.getElementById('customerMaintLoadingOverlay');
+        if (!el) return;
+        el.style.display = show ? 'flex' : 'none';
+    }
+
+    function deriveCustomerMaintHeaders() {
+        if (!customerMaintList || customerMaintList.length === 0) return;
+        const first = customerMaintList[0];
+        customerMaintHeaders = Object.keys(first).filter(k => !k.startsWith('__'));
+    }
+
+    function buildCustomerMaintTableHeader() {
+        const theadRow = document.querySelector('#customerMaintModal thead tr');
+        if (!theadRow || !customerMaintHeaders.length) return;
+        let html = "";
+        customerMaintHeaders.forEach(h => {
+            html += `<th>${h}</th>`;
+        });
+        html += `<th>Actions</th>`;
+        theadRow.innerHTML = html;
+    }
+
+    // OVERRIDE: openCustomerMaintenance again to include loading + headers
+    function openCustomerMaintenance() {
+        showCustomerMaintLoading(true);
+        loadAllRouteCustomersForMaintenance().then(() => {
+            deriveCustomerMaintHeaders();
+            buildCustomerMaintTableHeader();
+            renderCustomerTable();
+            showCustomerMaintLoading(false);
+            openModal('customerMaintModal');
+        }).catch(() => {
+            showCustomerMaintLoading(false);
+            openModal('customerMaintModal');
+        });
+    }
+
+    // OVERRIDE: renderCustomerTable again to use header-based fields and wire edit/delete
+    function renderCustomerTable() {
+        const body = document.getElementById('customerMaintBody');
+        const searchInput = document.getElementById('custSearch');
+        const search = (searchInput && searchInput.value) ? searchInput.value : "";
+        body.innerHTML = "";
+        if (!customerMaintHeaders.length) {
+            deriveCustomerMaintHeaders();
+        }
+        customerMaintList
