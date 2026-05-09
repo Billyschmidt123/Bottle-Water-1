@@ -210,29 +210,48 @@ if (typeof window.token === "undefined") {
         </div>
     </div>
 </div>
+</div>
+
+<script>
 async function initApp() {
     map = L.map('map').setView(warehouseCoord, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse").openPopup();
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+        .addTo(map);
+
+    L.marker(warehouseCoord)
+        .addTo(map)
+        .bindPopup("Warehouse")
+        .openPopup();
 
     await loadDynamicRoutes();
     await loadProductList();
 }
 
 async function loadProductList() {
-    const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
+    const productFiles = [
+        "Products/Water.csv",
+        "Products/Coffee.csv"
+    ];
 
     for (const path of productFiles) {
         try {
             const res = await fetch(`${REPO_BASE}/${path}`);
             const json = await res.json();
+
             if (!json || !json.content) continue;
 
-            const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-            const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
+            const decoded = decodeURIComponent(
+                escape(atob(json.content.replace(/\s/g, '')))
+            );
+
+            const lines = decoded
+                .split(/\n/)
+                .filter(l => l.trim() !== '');
 
             lines.slice(1).forEach(line => {
                 const p = line.split(',');
+
                 globalProducts.push({
                     name: p[0],
                     size: p[1],
@@ -241,9 +260,16 @@ async function loadProductList() {
                     active: true
                 });
             });
-        } catch (e) { console.error("Product Load Error", e); }
+
+        } catch (e) {
+            console.error("Product Load Error", e);
+        }
     }
 }
+</script>
+
+</body>
+</html>
 
 async function loadDynamicRoutes() {
     const dropdown = document.getElementById('routeDropdown');
