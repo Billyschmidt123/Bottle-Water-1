@@ -10,35 +10,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; overflow: hidden; }
-        
-        /* NAVIGATION & HEADER */
         header { background: #004a99; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1100; }
         .nav-controls { background: #e9ecef; padding: 12px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #ccc; }
         .info-pill { background: white; border: 1px solid #cbd5e0; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; color: #2d3748; flex-grow: 1; min-height: 20px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
-
-        /* SPLIT VIEW (70/30) */
         .main-view { display: flex; flex: 1; height: calc(100vh - 120px); }
         #map { flex: 7; height: 100%; border-right: 1px solid #ccc; z-index: 1; }
         .sidebar { flex: 3; background: white; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* MANIFEST SIDEBAR */
         .stop-list-container { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
         .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px; cursor: pointer; border-left: 5px solid #004a99; transition: 0.2s; }
         .delivery-card:hover { background: #f8fafc; }
-        .delivery-card.active { border-left-color: #28a745; background: #f0fff4; }
-
-        /* BUTTON STYLES */
         .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; white-space: nowrap; }
-        .btn-ui:hover { opacity: 0.9; filter: brightness(1.1); }
-
-        /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
-        
         .mgmt-table { width: 100%; border-collapse: collapse; background: white; }
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-
         #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
         .culligan-slip { font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; max-width: 800px; margin: auto; background: #fff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -160,9 +146,16 @@
             const json = await res.json();
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
+            
+            // Map CSV columns: ID (0), Address (1), Phone (2), Company Name (3)
             const stops = lines.slice(1).map(line => {
                 const parts = line.split(',');
-                return { name: parts[0]?.trim(), address: parts[1]?.trim(), phone: parts[2]?.trim() || '---' };
+                return { 
+                    id: parts[0]?.trim(), 
+                    address: parts[1]?.trim(), 
+                    phone: parts[2]?.trim() || '---',
+                    company: parts[3]?.trim() || parts[0]?.trim() // Column 4
+                };
             });
             renderManifest(stops);
         } catch (e) { console.error("Parse error", e); }
@@ -177,15 +170,9 @@
             const marker = L.marker([lat, lng]).addTo(map);
             markers.push(marker);
 
-            // EXTRACT COMPANY NAME (Removes ID before the hyphen)
-            let displayName = stop.name;
-            if (displayName.includes('-')) {
-                displayName = displayName.split('-').slice(1).join('-').trim();
-            }
-
             const card = document.createElement('div');
             card.className = 'delivery-card';
-            card.innerHTML = `<strong>${i+1}. ${displayName}</strong><br><small>${stop.address}</small>`;
+            card.innerHTML = `<strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small>`;
             card.onclick = () => {
                 map.flyTo([lat, lng], 15);
                 document.getElementById('activeAddress').innerText = stop.address;
@@ -209,12 +196,6 @@
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
-        // EXTRACT COMPANY NAME FOR SLIP (Removes ID before the hyphen)
-        let cleanName = stop.name;
-        if (cleanName.includes('-')) {
-            cleanName = cleanName.split('-').slice(1).join('-').trim();
-        }
-
         preview.innerHTML = `
             <div class="culligan-slip">
                 <div style="display:flex; justify-content:space-between;">
@@ -233,7 +214,7 @@
                     </div>
                     <div style="flex:2; border:1px solid #000; padding:10px;">
                         <p><strong>DATE:</strong> ${dateStr}</p>
-                        <p><strong>COMPANY:</strong> ${cleanName}<br>${stop.address}</p>
+                        <p><strong>COMPANY:</strong> ${stop.company}<br>${stop.address}</p>
                     </div>
                 </div>
                 <table class="c-table">
@@ -266,14 +247,18 @@
         const startDrawing = (e) => { drawing = true; sigCtx.beginPath(); };
         const draw = (e) => {
             if (!drawing) return;
-            const x = e.offsetX || e.touches[0].clientX - sigCanvas.getBoundingClientRect().left;
-            const y = e.offsetY || e.touches[0].clientY - sigCanvas.getBoundingClientRect().top;
+            const rect = sigCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
             sigCtx.lineTo(x, y);
             sigCtx.stroke();
         };
         sigCanvas.addEventListener('mousedown', startDrawing);
         sigCanvas.addEventListener('mousemove', draw);
         sigCanvas.addEventListener('mouseup', () => drawing = false);
+        sigCanvas.addEventListener('touchstart', startDrawing);
+        sigCanvas.addEventListener('touchmove', draw);
+        sigCanvas.addEventListener('touchend', () => drawing = false);
     }
 
     function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
