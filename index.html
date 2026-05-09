@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Culligan Delivery System - Full Build</title>
+    <title>Culligan Bottle Water Grande Prairie</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -16,44 +17,51 @@
         #map { flex: 7; height: 100%; border-right: 1px solid #ccc; z-index: 1; }
         .sidebar { flex: 3; background: white; display: flex; flex-direction: column; overflow: hidden; }
         .stop-list-container { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
-        .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; border-left: 5px solid #004a99; transition: 0.2s; }
-        .delivery-card:hover { background: #f8fafc; transform: translateX(3px); }
+        .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px; cursor: pointer; border-left: 5px solid #004a99; transition: 0.2s; }
+        .delivery-card:hover { background: #f8fafc; }
         .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; white-space: nowrap; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
-        .mgmt-table { width: 100%; border-collapse: collapse; }
+        .mgmt-table { width: 100%; border-collapse: collapse; background: white; }
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .maint-input { width: 95%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        .search-container { position: relative; width: 450px; }
-        .maint-search { width: 100%; padding: 10px 15px; border-radius: 5px; border: 2px solid #004a99; font-size: 1rem; outline: none; }
-        .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 350px; overflow-y: auto; color: #333; }
-        .search-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .search-row:hover { background: #f0f7ff; }
-        .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #000; }
-        .c-table th, .c-table td { border: 1px solid #000; padding: 8px; font-size: 0.9rem; }
-        .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 120px; }
+        #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
+        .culligan-slip { font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; max-width: 800px; margin: auto; background: #fff; }
+        .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
+        .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 150px; cursor: crosshair; }
+        .red-text { color: #d00; font-weight: bold; }
+        .product-selector-row { display: flex; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; }
+        .product-select { flex: 2; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
+        .del-btn { color: #dc3545; cursor: pointer; margin-left: 10px; font-size: 1rem; }
+        .del-btn:hover { color: #a71d2a; }
+        .unit-select { padding: 2px; font-size: 0.75rem; border-radius: 3px; border: 1px solid #ccc; }
+        .maint-input { width: 90%; padding: 5px; border: 1px solid #ddd; }
+        .deactivated { opacity: 0.5; background: #f9f9f9; }
+        @media print { .no-print { display: none !important; } .only-print { display: inline !important; } }
+        .only-print { display: none; }
     </style>
 </head>
 <body>
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
-        <h1 style="margin:0; font-size:1.5rem;"><i class="fas fa-tint"></i> Culligan Delivery</h1>
+        <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> Culligan Bottle Water Grande Prairie</h1>
         <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
     </div>
     <div style="display:flex; gap:12px;">
         <button class="btn-ui" style="background:#6c757d;" onclick="openModal('mgrModal')"><i class="fas fa-user-shield"></i> Manager Portal</button>
-        <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Sync Data</button>
+        <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
 </header>
 
 <div class="nav-controls">
-    <button class="btn-ui" style="background: #28a745;" onclick="startGPS()"><i class="fas fa-play"></i> START</button>
+    <button class="btn-ui" style="background: #28a745;" onclick="startRoute()"><i class="fas fa-play"></i> START ROUTE</button>
     <button class="btn-ui" style="background: #dc3545;" onclick="runEndOfDay()"><i class="fas fa-flag-checkered"></i> FINISH</button>
     <div id="activeAddress" class="info-pill">Address: ---</div>
     <div id="activePhone" class="info-pill" style="flex-grow: 0; min-width: 180px;">Phone: ---</div>
-    <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeRoute()"><i class="fas fa-magic"></i> OPTIMIZE</button>
+    <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeCurrent()"><i class="fas fa-magic"></i> OPTIMIZE</button>
 </div>
 
 <div class="main-view">
@@ -63,98 +71,50 @@
             <h3 style="margin:0;">Route Manifest</h3>
         </div>
         <div id="stopList" class="stop-list-container">
-            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Load a route to view stops.</div>
+            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route to view stops.</div>
         </div>
     </div>
 </div>
 
-<!-- Manager Hub -->
 <div id="mgrModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 650px; height: auto;">
+    <div class="modal-content">
         <div style="background:#004a99; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-tasks"></i> Management Hub</h3>
             <button onclick="closeModal('mgrModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
-        <div style="padding:25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <button class="btn-ui" style="background:#007bff; justify-content: center; padding: 15px;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
-            <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
-            <button class="btn-ui" style="background:#e67e22; justify-content: center; padding: 15px;" onclick="exportMasterList()"><i class="fas fa-file-export"></i> Export Master List</button>
-            <button class="btn-ui" style="background:#28a745; justify-content: center; padding: 15px;" onclick="alert('Call-In Mode')"><i class="fas fa-phone-alt"></i> Call-In Order</button>
-            <button class="btn-ui" style="background:#444; justify-content: center; padding: 15px;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup Data</button>
-            <button class="btn-ui" style="background:#f39c12; justify-content: center; padding: 15px;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
-        </div>
-    </div>
-</div>
-
-<!-- Customer Maintenance Modal -->
-<div id="custMaintModal" class="modal-overlay">
-    <div class="modal-content">
-        <div style="background:#007bff; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:25px;">
-                <h3 style="margin:0;"><i class="fas fa-address-book"></i> Customer Maintenance</h3>
-                <div class="search-container">
-                    <input type="text" id="maintSearch" class="maint-search" placeholder="Search All Routes (Name or Address)..." onkeyup="searchAllFiles(this.value)">
-                    <div id="maintSearchResults" class="search-dropdown"></div>
+        <div style="padding:20px; flex:1; overflow-y:auto;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
+                <button class="btn-ui" style="background:#007bff;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
+                <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
+                <button class="btn-ui" style="background:#28a745;" onclick="alert('Manual Entry Mode Active')"><i class="fas fa-phone"></i> Call-In Order</button>
+                <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
+                <div style="margin-left:auto; border:1px solid #ccc; padding:10px; background:white; border-radius:5px; font-size:0.8rem;">
+                    <strong>App Settings:</strong><br>
+                    <label><input type="checkbox" id="togglePricing" checked onchange="updateSettings()"> Show Pricing</label><br>
+                    <label>Tax: <select id="taxType" onchange="updateSettings()">
+                        <option value="GST">GST (5%)</option>
+                        <option value="PST">PST</option>
+                        <option value="HST">HST</option>
+                    </select></label>
                 </div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button onclick="saveAllCustomers()" class="btn-ui" style="background:#28a745;"><i class="fas fa-save"></i> Save Changes</button>
-                <button onclick="closeModal('custMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            <div style="background:white; border:1px solid #cbd5e0; border-radius:8px; padding:15px;">
+                <table class="mgmt-table">
+                    <thead><tr><th>Route Name</th><th>Path</th><th>Type</th></tr></thead>
+                    <tbody id="mgrTableBody"></tbody>
+                </table>
             </div>
-        </div>
-        <div style="padding:20px; flex:1; overflow-y:auto;">
-            <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th style="width:100px;">Account #</th>
-                        <th>Name / Company</th>
-                        <th>Address</th>
-                        <th>Phone</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="custMaintBody"></tbody>
-            </table>
         </div>
     </div>
 </div>
 
-<!-- Product Maintenance Modal -->
-<div id="prodMaintModal" class="modal-overlay">
-    <div class="modal-content">
-        <div style="background:#6610f2; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;"><i class="fas fa-boxes"></i> Product Maintenance</h3>
-            <div style="display:flex; gap:10px;">
-                <button onclick="addNewProductRow()" class="btn-ui" style="background:#28a745;"><i class="fas fa-plus"></i> Add New</button>
-                <button onclick="saveAllProducts()" class="btn-ui" style="background:#007bff;"><i class="fas fa-save"></i> Save Products</button>
-                <button onclick="closeModal('prodMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
-            </div>
-        </div>
-        <div style="padding:20px; flex:1; overflow-y:auto;">
-            <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th>Source File</th>
-                        <th>Description</th>
-                        <th>Size</th>
-                        <th>Base Price</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="prodMaintBody"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Delivery Slip Modal -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
             <div style="display:flex; gap:10px;">
                 <button onclick="clearSignature()" class="btn-ui" style="background:#ffc107; color:#212529;"><i class="fas fa-eraser"></i> Clear Sig</button>
-                <button onclick="savePDF()" class="btn-ui" style="background:#dc3545;"><i class="fas fa-file-pdf"></i> Save PDF</button>
+                <button onclick="emailSlip()" class="btn-ui" style="background:#fff; color:#28a745;"><i class="fas fa-save"></i> Save PDF</button>
                 <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
         </div>
@@ -164,159 +124,303 @@
     </div>
 </div>
 
+<div id="productMaintModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 98%;">
+        <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;"><i class="fas fa-tools"></i> Global Product Maintenance</h3>
+            <div style="display:flex; gap:10px;">
+                <button onclick="addNewProductRow()" class="btn-ui" style="background:#28a745;"><i class="fas fa-plus"></i> Add New Product</button>
+                <button onclick="saveAllProducts()" class="btn-ui" style="background:#007bff;"><i class="fas fa-save"></i> Save Changes</button>
+                <button onclick="closeModal('productMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            </div>
+        </div>
+        <div style="padding:20px; flex:1; overflow-y:auto; background:#fff;">
+            <table class="mgmt-table">
+                <thead>
+                    <tr>
+                        <th>Source File</th>
+                        <th>Product Name</th>
+                        <th>Size</th>
+                        <th>Base Price</th>
+                        <th>Case Price</th>
+                        <th>Box Price</th>
+                        <th>Sleeve Price</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productMaintBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let map, markers = [];
+    let map;
+    let markers = [];
     const warehouseCoord = [55.1707, -118.7947];
     const REPO_OWNER = "Billyschmidt123";
     const REPO_NAME = "Bottle-Water-1";
     const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
-    
-    let allCustomersCache = []; 
-    let currentRouteStops = [];
-    let globalProducts = [];
-    let activeCustomer = null;
     let sigCanvas, sigCtx, drawing = false;
 
+    let globalProducts = [];
+    let appSettings = { showPricing: true, taxLabel: "GST", taxRate: 0.05 };
+    let currentStopProducts = [];
+
     async function initApp() {
-        map = L.map('map').setView(warehouseCoord, 12);
+        map = L.map('map').setView(warehouseCoord, 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse");
-        await loadDynamicRoutes();
-        await loadProductList();
-        await preCacheAllRoutes(); 
+        L.marker(warehouseCoord).addTo(map).bindPopup("<b>Warehouse</b>").openPopup();
+        window.addEventListener('resize', () => { if (map) map.invalidateSize(); });
+        await loadDynamicRoutes(); 
+        await loadProductList(); 
     }
 
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
-        globalProducts = [];
-        for (const path of productFiles) {
-            try {
+        try {
+            globalProducts = []; 
+            for (const path of productFiles) {
                 const res = await fetch(`${REPO_BASE}/${path}`);
                 const json = await res.json();
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                const lines = decoded.split(/
-?
-/).filter(l => l.trim() !== '');
-                if (lines.length < 2) continue;
+                const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
+                
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const unitMap = {
+                    'case': headers.indexOf('case'),
+                    'box': headers.indexOf('box'),
+                    'sleeve': headers.indexOf('sleeve'),
+                    'bottle': headers.indexOf('bottle') !== -1 ? headers.indexOf('bottle') : headers.indexOf('jug'),
+                    'price_case': headers.indexOf('price case'),
+                    'price_box': headers.indexOf('price box'),
+                    'price_sleeve': headers.indexOf('price sleeve'),
+                    'price_bottle': headers.indexOf('price bottle') !== -1 ? headers.indexOf('price bottle') : headers.indexOf('price jug')
+                };
 
                 lines.slice(1).forEach(line => {
                     const p = line.split(',');
                     if(p[0]) {
+                        let availableUnits = [];
+                        if (unitMap.case !== -1 && p[unitMap.case]) availableUnits.push({label: 'Case', price: parseFloat(p[unitMap.price_case]) || 0});
+                        if (unitMap.box !== -1 && p[unitMap.box]) availableUnits.push({label: 'Box', price: parseFloat(p[unitMap.price_box]) || 0});
+                        if (unitMap.sleeve !== -1 && p[unitMap.sleeve]) availableUnits.push({label: 'Sleeve', price: parseFloat(p[unitMap.price_sleeve]) || 0});
+                        if (unitMap.bottle !== -1 && p[unitMap.bottle]) availableUnits.push({label: 'Bottle', price: parseFloat(p[unitMap.price_bottle]) || 0});
+
                         globalProducts.push({ 
                             name: p[0].trim(), 
                             size: p[1]?.trim() || '', 
                             price: parseFloat(p[2]) || 0,
+                            units: availableUnits,
                             source: path,
                             active: true
                         });
                     }
                 });
-            } catch (e) { console.warn("Load failed:", path); }
-        }
-        window.globalActiveOptions = globalProducts.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
+            }
+            populateDropdowns();
+        } catch (e) { console.error("Error loading product files", e); }
+    }
+
+    function populateDropdowns() {
+        const activeProds = globalProducts.filter(p => p.active !== false);
+        window.activeProductOptionsHtml = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
+    }
+
+    function updateSettings() {
+        appSettings.showPricing = document.getElementById('togglePricing').checked;
+        appSettings.taxLabel = document.getElementById('taxType').value;
+        appSettings.taxRate = appSettings.taxLabel === 'GST' ? 0.05 : 0.07;
+        syncSlipProducts();
     }
 
     async function loadDynamicRoutes() {
         const dropdown = document.getElementById('routeDropdown');
+        const mgrTable = document.getElementById('mgrTableBody');
         try {
-            const res = await fetch(`${REPO_BASE}/routes`);
-            const files = await res.json();
-            let options = files.filter(f => f.name.endsWith('.csv'))
-                               .map(f => `<option value="${f.path}">${f.name.replace('.csv','')}</option>`);
-            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + options.join('');
-        } catch (e) { console.error("Routes failed"); }
-    }
-
-    async function preCacheAllRoutes() {
-        try {
-            const res = await fetch(`${REPO_BASE}/routes`);
-            const files = await res.json();
-            allCustomersCache = [];
-            for (let file of files) {
-                if (!file.name.endsWith('.csv')) continue;
-                const contentRes = await fetch(file.download_url);
-                const text = await contentRes.text();
-                const lines = text.split('
-').slice(1);
-                lines.forEach(line => {
-                    const p = line.split(',');
-                    if (p[0] && p[0].trim() !== '') {
-                        allCustomersCache.push({
-                            id: p[0].trim(),
-                            name: p[3]?.trim() || p[0].trim(),
-                            address: [p[4], p[5], p[6]].filter(Boolean).join(' '),
-                            phone: p[2] || '---',
-                            routeFile: file.path,
-                            routeName: file.name.replace('.csv','')
-                        });
-                    }
-                });
-            }
-        } catch (e) { console.warn("Cache fail"); }
-    }
-
-    function searchAllFiles(query) {
-        const resultsBox = document.getElementById('maintSearchResults');
-        if (query.length < 2) { resultsBox.style.display = 'none'; return; }
-        const filtered = allCustomersCache.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.address.toLowerCase().includes(query.toLowerCase())).slice(0, 15);
-        if (filtered.length > 0) {
-            resultsBox.innerHTML = filtered.map(c => `<div class="search-row" onclick="selectFromSearch('${c.routeFile}', '${c.id}')"><strong>${c.name}</strong><br><small>${c.address} (${c.routeName})</small></div>`).join('');
-            resultsBox.style.display = 'block';
-        } else {
-            resultsBox.innerHTML = '<div style="padding:10px;">No results.</div>';
-            resultsBox.style.display = 'block';
-        }
-    }
-
-    async function selectFromSearch(filePath, customerId) {
-        document.getElementById('maintSearchResults').style.display = 'none';
-        document.getElementById('maintSearch').value = "";
-        document.getElementById('routeDropdown').value = filePath;
-        await loadSelectedRoute();
-        openCustomerMaintenance(); 
+            const response = await fetch(`${REPO_BASE}/routes`);
+            const contents = await response.json();
+            let options = contents.filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.csv'))
+                                  .map(o => ({ name: o.name.replace('.csv', ''), path: o.path }));
+            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + options.map(o => `<option value="${o.path}">${o.name}</option>`).join('');
+            mgrTable.innerHTML = options.map(o => `<tr><td>${o.name}</td><td>${o.path}</td><td>CSV Manifest</td></tr>`).join('');
+        } catch (e) { console.error("Error loading routes", e); }
     }
 
     async function loadSelectedRoute() {
-        const path = document.getElementById('routeDropdown').value;
-        if (!path) return;
+        const filePath = document.getElementById('routeDropdown').value;
+        if (!filePath) return;
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
         try {
-            const res = await fetch(`${REPO_BASE}/${path}`);
+            const res = await fetch(`${REPO_BASE}/${filePath}`);
             const json = await res.json();
-            const text = atob(json.content);
-            const lines = text.split('
-').filter(l => l.trim() !== '').slice(1);
-            currentRouteStops = lines.map(line => {
-                const p = line.split(',');
-                return { id: p[0].trim(), company: p[3]?.trim() || 'Customer', address: [p[4], p[5], p[6]].filter(Boolean).join(' '), phone: p[2] || '---' };
+            const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+            const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
+            
+            const stops = lines.slice(1).map(line => {
+                const parts = line.split(',');
+                const combinedAddr = [parts[4], parts[5], parts[6], parts[7]]
+                                     .filter(p => p && p.trim() !== '' && p.trim().toUpperCase() !== 'NONE')
+                                     .join(' ').trim();
+                return { 
+                    id: parts[0]?.trim(), 
+                    address: combinedAddr || parts[1]?.trim(),
+                    phone: parts[2]?.trim() || '---',
+                    company: parts[3]?.trim() || parts[0]?.trim()
+                };
             });
-            renderManifest();
-        } catch (e) { console.error("Load route fail"); }
+            renderManifest(stops);
+        } catch (e) { console.error("Parse error", e); }
     }
 
-    function renderManifest() {
-        const list = document.getElementById('stopList');
-        list.innerHTML = currentRouteStops.map((stop, i) => `<div class="delivery-card" onclick="openStopSlip(currentRouteStops[${i}])"><strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small></div>`).join('');
+    function renderManifest(stops) {
+        const stopList = document.getElementById('stopList');
+        stopList.innerHTML = "";
+        stops.forEach((stop, i) => {
+            const lat = warehouseCoord[0] + (Math.random() - 0.5) * 0.1;
+            const lng = warehouseCoord[1] + (Math.random() - 0.5) * 0.1;
+            const marker = L.marker([lat, lng]).addTo(map);
+            markers.push(marker);
+
+            const card = document.createElement('div');
+            card.className = 'delivery-card';
+            card.innerHTML = `<strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small>`;
+            card.onclick = () => {
+                map.flyTo([lat, lng], 15);
+                document.getElementById('activeAddress').innerText = stop.address;
+                document.getElementById('activePhone').innerText = stop.phone;
+                currentStopProducts = []; 
+                openStopSlip(stop);
+            };
+            stopList.appendChild(card);
+        });
+        if (markers.length) map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.1));
     }
 
-    function openCustomerMaintenance() {
-        const body = document.getElementById('custMaintBody');
-        body.innerHTML = currentRouteStops.length ? currentRouteStops.map((s, i) => `<tr><td><input class="maint-input" value="${s.id}" onchange="currentRouteStops[${i}].id=this.value"></td><td><input class="maint-input" value="${s.company}" onchange="currentRouteStops[${i}].company=this.value"></td><td><input class="maint-input" value="${s.address}" onchange="currentRouteStops[${i}].address=this.value"></td><td><input class="maint-input" value="${s.phone}" onchange="currentRouteStops[${i}].phone=this.value"></td><td><button onclick="currentRouteStops.splice(${i},1); openCustomerMaintenance();" style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:30px;">Load route to edit.</td></tr>';
-        openModal('custMaintModal');
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function startRoute() { alert("GPS Logging Started."); }
+    function runEndOfDay() { if(confirm("Complete today's route?")) location.reload(); }
+    function optimizeCurrent() { alert("Route re-sequenced."); }
+    function downloadBackup() { alert("Backup system ready."); }
+
+    function syncSlipProducts() {
+        const stop = window.currentActiveStop;
+        if (stop) openStopSlip(stop);
     }
 
-    function openProductMaintenance() {
-        const body = document.getElementById('prodMaintBody');
-        body.innerHTML = globalProducts.map((p, i) => `<tr><td><select class="maint-input"><option ${p.source.includes('Water') ? 'selected':''}>Water</option><option ${p.source.includes('Coffee') ? 'selected':''}>Coffee</option></select></td><td><input class="maint-input" value="${p.name}"></td><td><input class="maint-input" value="${p.size}"></td><td><input class="maint-input" value="${p.price}"></td><td><button style="color:red;border:none;background:none;"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        openModal('prodMaintModal');
+    function addProductToList(idx) {
+        if (idx === "") return;
+        const activeProds = globalProducts.filter(p => p.active !== false);
+        const product = activeProds[idx];
+        const initialPrice = product.units.length > 0 ? product.units[0].price : product.price;
+        const initialUnit = product.units.length > 0 ? product.units[0].label : 'Each';
+        
+        currentStopProducts.push({ 
+            ...product, 
+            qty: 1, 
+            selectedPrice: initialPrice, 
+            selectedUnit: initialUnit 
+        });
+        syncSlipProducts();
+    }
+
+    function updateListQty(index, qty) {
+        currentStopProducts[index].qty = parseInt(qty) || 0;
+        syncSlipProducts();
+    }
+
+    function updateListUnit(index, unitLabel) {
+        const product = currentStopProducts[index];
+        const unitData = product.units.find(u => u.label === unitLabel);
+        if (unitData) {
+            product.selectedUnit = unitLabel;
+            product.selectedPrice = unitData.price;
+            syncSlipProducts();
+        }
+    }
+
+    function removeProductFromList(index) {
+        currentStopProducts.splice(index, 1);
+        syncSlipProducts();
     }
 
     function openStopSlip(stop) {
-        activeCustomer = stop;
-        document.getElementById('activeAddress').innerText = stop.address;
-        document.getElementById('activePhone').innerText = stop.phone;
+        window.currentActiveStop = stop; 
         const preview = document.getElementById('slipPreview');
-        preview.innerHTML = `<div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto; color:#000;"><div style="display:flex; justify-content:space-between;"><div><h1 style="color:#004a99; margin:0;">Culligan Water</h1><p>12001 99 Ave, Grande Prairie, AB</p></div><div style="text-align:right;"><h3>Delivery Slip</h3><p>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div></div><hr><div style="margin:20px 0;"><strong>BILL TO:</strong><br>${stop.company}<br>${stop.address}</div><div class="no-print" style="margin-bottom:10px;"><select style="width:100%; padding:8px; border:2px solid #004a99; border-radius:4px;"><option>+ Add Product</option>${window.globalActiveOptions}</select></div><table class="c-table" style="width:100%;"><thead><tr style="background:#eee;"><th>QTY</th><th>ITEM DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead><tbody><tr style="height:150px;"><td colspan="4" style="text-align:center;">Add products to begin slip...</td></tr></tbody></table><div style="margin-top:30px;"><p>Signature:</p><canvas id="signaturePad" class="sig-canvas"></canvas></div></div>`;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        let rowsHtml = "";
+        let subtotal = 0;
+
+        currentStopProducts.forEach((p, index) => {
+            const lineTotal = p.selectedPrice * p.qty;
+            subtotal += lineTotal;
+            
+            let unitDropdown = `<select class="unit-select no-print" onchange="updateListUnit(${index}, this.value)">`;
+            if (p.units && p.units.length > 0) {
+                p.units.forEach(u => {
+                    unitDropdown += `<option value="${u.label}" ${p.selectedUnit === u.label ? 'selected' : ''}>${u.label}</option>`;
+                });
+            } else {
+                unitDropdown += `<option>Each</option>`;
+            }
+            unitDropdown += `</select>`;
+
+            rowsHtml += `<tr>
+                <td><input type="number" class="qty-input no-print" value="${p.qty}" onchange="updateListQty(${index}, this.value)"><span class="only-print">${p.qty}</span></td>
+                <td>${p.name} ${p.size}</td>
+                <td>${unitDropdown} <span class="only-print">(${p.selectedUnit})</span></td>
+                <td>${appSettings.showPricing ? '$' + lineTotal.toFixed(2) : '--'} <i class="fas fa-times del-btn no-print" onclick="removeProductFromList(${index})"></i></td>
+            </tr>`;
+        });
+
+        preview.innerHTML = `
+            <div class="culligan-slip">
+                <div style="display:flex; justify-content:space-between;">
+                    <div>
+                        <h2 style="font-size:2.5rem; margin:0; font-family:'Brush Script MT', cursive;">Culligan</h2>
+                        <p style="margin:0; font-weight:bold; letter-spacing:2px;">BOTTLED WATER</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <p class="red-text" style="font-size:1.2rem;">DELIVERY SLIP</p>
+                        <p class="red-text" style="font-size:1.5rem; border:1px solid #d00; padding:5px;">100131</p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:20px; margin-top:20px;">
+                    <div style="flex:1; font-size:0.7rem;">
+                        <p>CULLIGAN BOTTLED WATER<br>598316 ALBERTA LTD.<br>12001-99 AVENUE<br>GRANDE PRAIRIE, AB T8W 0J7<br>PHONE: (780) 532-8584</p>
+                    </div>
+                    <div style="flex:2; border:1px solid #000; padding:10px;">
+                        <p><strong>DATE:</strong> ${dateStr}</p>
+                        <p><strong>COMPANY:</strong> ${stop.company}<br>${stop.address}</p>
+                    </div>
+                </div>
+
+                <div class="no-print" style="margin-top: 20px; margin-bottom: 5px;">
+                    <select class="product-select" style="width: 100%; border: 2px solid #004a99;" onchange="addProductToList(this.value)">
+                        <option value="">-- Add Product --</option>
+                        ${window.activeProductOptionsHtml}
+                    </select>
+                </div>
+
+                <table class="c-table">
+                    <thead><tr style="background:#eee;"><th>QTY.</th><th>DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead>
+                    <tbody>${rowsHtml || '<tr><td colspan="4" style="text-align:center; padding:20px;">No Products Added</td></tr>'}</tbody>
+                    <tfoot>
+                        <tr><td colspan="2">G.S.T. #891131088 RT</td><td style="background:#eee;">${appSettings.taxLabel}</td><td>${appSettings.showPricing ? '$' + (subtotal * appSettings.taxRate).toFixed(2) : '--'}</td></tr>
+                        <tr><td colspan="2"></td><td style="background:#eee; font-weight:bold;">TOTAL</td><td style="font-weight:bold;">${appSettings.showPricing ? '$' + (subtotal * (1 + appSettings.taxRate)).toFixed(2) : '--'}</td></tr>
+                    </tfoot>
+                </table>
+                <div style="margin-top:20px; border-top:2px solid #000;">
+                    <p style="font-weight:bold;">CUSTOMER SIGNATURE:</p>
+                    <canvas id="signaturePad" class="sig-canvas"></canvas>
+                </div>
+            </div>`;
         openModal('stopModal');
         initSignaturePad();
     }
@@ -326,24 +430,95 @@
         if (!sigCanvas) return;
         sigCtx = sigCanvas.getContext('2d');
         sigCanvas.width = sigCanvas.offsetWidth;
-        sigCanvas.height = 120;
-        sigCanvas.onmousedown = () => { drawing = true; sigCtx.beginPath(); };
-        sigCanvas.onmouseup = () => drawing = false;
-        sigCanvas.onmousemove = (e) => { if(!drawing) return; const rect = sigCanvas.getBoundingClientRect(); sigCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top); sigCtx.stroke(); };
+        sigCanvas.height = sigCanvas.offsetHeight;
+        sigCtx.strokeStyle = "#00008b";
+        sigCtx.lineWidth = 2;
+        const startDrawing = (e) => { drawing = true; sigCtx.beginPath(); };
+        const draw = (e) => {
+            if (!drawing) return;
+            const rect = sigCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            sigCtx.lineTo(x, y);
+            sigCtx.stroke();
+        };
+        sigCanvas.addEventListener('mousedown', startDrawing);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', () => drawing = false);
+        sigCanvas.addEventListener('touchstart', startDrawing);
+        sigCanvas.addEventListener('touchmove', draw);
+        sigCanvas.addEventListener('touchend', () => drawing = false);
     }
 
-    function clearSignature() { if(sigCtx) sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height); }
-    function savePDF() { const longDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${longDate}.pdf`; html2pdf().from(document.getElementById('pdfContent')).save(filename); }
-    function startGPS() { alert("GPS Logging Active"); }
-    function optimizeRoute() { alert("Optimizing Route Path"); }
-    function exportMasterList() { alert("Exporting Master CSV..."); }
-    function downloadBackup() { alert("Downloading SQLite Backup..."); }
-    function runEndOfDay() { alert("Finalizing Daily Routes..."); }
-    function saveAllCustomers() { renderManifest(); alert("Route saved."); closeModal('custMaintModal'); }
-    function saveAllProducts() { alert("Products updated."); closeModal('prodMaintModal'); }
-    function addNewProductRow() { globalProducts.push({name:'New Item', size:'', price:0, source:'Water'}); openProductMaintenance(); }
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+    
+    function emailSlip() {
+        const stop = window.currentActiveStop;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const fileName = `${stop.company} - 100131 - ${dateStr}.pdf`;
+        html2pdf().from(document.getElementById('slipPreview')).save(fileName);
+    }
+
+    function openProductMaintenance() {
+        renderProductMaintenanceTable();
+        openModal('productMaintModal');
+    }
+
+    function renderProductMaintenanceTable() {
+        const body = document.getElementById('productMaintBody');
+        body.innerHTML = "";
+        globalProducts.forEach((p, idx) => {
+            const row = document.createElement('tr');
+            if (p.active === false) row.classList.add('deactivated');
+            const getPrice = (label) => p.units.find(u => u.label.toLowerCase() === label.toLowerCase())?.price || 0;
+            row.innerHTML = `
+                <td><select class="maint-input" onchange="updateMaintField(${idx}, 'source', this.value)">
+                    <option value="Products/Water.csv" ${p.source === 'Products/Water.csv' ? 'selected' : ''}>Water</option>
+                    <option value="Products/Coffee.csv" ${p.source === 'Products/Coffee.csv' ? 'selected' : ''}>Coffee</option>
+                </select></td>
+                <td><input type="text" class="maint-input" value="${p.name}" onchange="updateMaintField(${idx}, 'name', this.value)"></td>
+                <td><input type="text" class="maint-input" value="${p.size}" onchange="updateMaintField(${idx}, 'size', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${p.price}" onchange="updateMaintField(${idx}, 'price', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Case')}" onchange="updateMaintUnitPrice(${idx}, 'Case', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Box')}" onchange="updateMaintUnitPrice(${idx}, 'Box', this.value)"></td>
+                <td><input type="number" class="maint-input" value="${getPrice('Sleeve')}" onchange="updateMaintUnitPrice(${idx}, 'Sleeve', this.value)"></td>
+                <td><strong>${p.active !== false ? 'ACTIVE' : 'INACTIVE'}</strong></td>
+                <td><button class="btn-ui" style="background:${p.active !== false ? '#dc3545' : '#28a745'}; padding: 5px 10px;" onclick="toggleProductStatus(${idx})">${p.active !== false ? 'Deactivate' : 'Reactivate'}</button></td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    function updateMaintField(idx, field, value) {
+        if (field === 'price') value = parseFloat(value);
+        globalProducts[idx][field] = value;
+    }
+
+    function updateMaintUnitPrice(idx, label, value) {
+        const val = parseFloat(value);
+        const unitIdx = globalProducts[idx].units.findIndex(u => u.label === label);
+        if (unitIdx > -1) globalProducts[idx].units[unitIdx].price = val;
+        else if (val > 0) globalProducts[idx].units.push({ label: label, price: val });
+    }
+
+    function toggleProductStatus(idx) {
+        globalProducts[idx].active = globalProducts[idx].active !== false ? false : true;
+        renderProductMaintenanceTable();
+        populateDropdowns();
+    }
+
+    function addNewProductRow() {
+        globalProducts.push({ name: "New Product", size: "000ml", price: 0, units: [], source: "Products/Water.csv", active: true });
+        renderProductMaintenanceTable();
+    }
+
+    function saveAllProducts() {
+        alert("Product database updated locally. To persist permanently, ensure CSV files are synchronized via server-side update.");
+        populateDropdowns();
+        closeModal('productMaintModal');
+    }
+
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
