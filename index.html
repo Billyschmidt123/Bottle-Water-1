@@ -53,15 +53,13 @@
 // === TOKEN EARLY-LOAD SHIM (ADDITIVE FIX) ===
 if (typeof window.token === "undefined") {
     try {
-        // Try to read token if it already exists in closure
         if (typeof token !== "undefined") {
             window.token = token;
         }
-    } catch (e) {
-        // token not defined yet — will be set by hidden PAT block later
-    }
+    } catch (e) {}
 }
 </script>
+
 <script>
     function openModal(id) {
         const el = document.getElementById(id);
@@ -76,6 +74,7 @@ if (typeof window.token === "undefined") {
 </script>
 
 <header>
+
     <div style="display:flex; align-items:center; gap:20px;">
         <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> Culligan Bottle Water Grande Prairie</h1>
         <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
