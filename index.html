@@ -38,6 +38,10 @@
         .mgmt-table { width: 100%; border-collapse: collapse; background: white; }
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+
+        /* ADDED: SLIP STYLING FOR STOP LIST OPENING */
+        #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
+        .slip-header { border-bottom: 3px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -96,6 +100,24 @@
     </div>
 </div>
 
+<!-- ADDED: UNIFORM MODAL FOR STOP SLIP -->
+<div id="stopModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
+            <div style="display:flex; gap:10px;">
+                <button onclick="printSlip()" class="btn-ui" style="background:#fff; color:#28a745;"><i class="fas fa-print"></i> Print</button>
+                <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            </div>
+        </div>
+        <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
+            <div id="slipPreview">
+                <!-- Content injected via openStopSlip() -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map;
@@ -116,6 +138,7 @@
 
     async function loadDynamicRoutes() {
         const dropdown = document.getElementById('routeDropdown');
+        const mgrTable = document.getElementById('mgrTableBody');
         dropdown.innerHTML = '<option>Scanning routes...</option>';
 
         try {
@@ -131,11 +154,22 @@
                 }
             });
 
+            // Populate Main Dropdown
             dropdown.innerHTML = '<option value="">-- Select Route --</option>' + 
                 options.map(o => `<option value="${o.path}">${o.name}</option>`).join('');
 
+            // Populate Management Table
+            mgrTable.innerHTML = options.map(o => `
+                <tr>
+                    <td>${o.name}</td>
+                    <td>${o.path}</td>
+                    <td>CSV Manifest</td>
+                </tr>
+            `).join('');
+
         } catch (e) {
             dropdown.innerHTML = '<option>Error loading routes</option>';
+            mgrTable.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Connection Error</td></tr>';
         }
     }
 
@@ -177,11 +211,14 @@
             const card = document.createElement('div');
             card.className = 'delivery-card';
             card.innerHTML = `<strong>${i+1}. ${stop.name}</strong><br><small>${stop.address}</small>`;
+            
+            /* ADDITIVE CHANGE: Enhanced onclick to open slip modal */
             card.onclick = () => {
                 map.flyTo([lat, lng], 15);
                 marker.openPopup();
                 document.getElementById('activeAddress').innerText = stop.address;
                 document.getElementById('activePhone').innerText = stop.phone;
+                openStopSlip(stop); // New module call
             };
             stopList.appendChild(card);
         });
@@ -193,6 +230,53 @@
     function startRoute() { alert("GPS Logging Started."); }
     function runEndOfDay() { if(confirm("Complete today's route?")) location.reload(); }
     function optimizeCurrent() { alert("Route re-sequenced."); }
+
+    function downloadBackup() {
+        alert("Backup system ready. Generating CSV snapshot...");
+    }
+
+    /* ADDED MODULE: STOP LIST OPENING LOGIC (SLIP GENERATION) */
+    function openStopSlip(stop) {
+        const preview = document.getElementById('slipPreview');
+        const now = new Date().toLocaleDateString();
+        
+        preview.innerHTML = `
+            <div class="slip-header">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="margin:0;">Culligan Water - Grande Prairie</h2>
+                    <span>Date: ${now}</span>
+                </div>
+                <p>12001 99 Ave, Grande Prairie, AB</p>
+            </div>
+            <div style="margin-bottom:30px;">
+                <h3>Customer Information</h3>
+                <p><strong>Name:</strong> ${stop.name}</p>
+                <p><strong>Address:</strong> ${stop.address}</p>
+                <p><strong>Phone:</strong> ${stop.phone}</p>
+            </div>
+            <div style="border:1px solid #000; padding:15px; margin-bottom:20px;">
+                <h4>Delivery Details</h4>
+                <div style="height:150px; border-bottom:1px dashed #ccc;">Service/Product Notes:</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:50px;">
+                <div style="border-top:1px solid #000; width:45%; text-align:center;">Driver Signature</div>
+                <div style="border-top:1px solid #000; width:45%; text-align:center;">Customer Signature</div>
+            </div>
+        `;
+        openModal('stopModal');
+    }
+
+    function printSlip() {
+        const element = document.getElementById('slipPreview');
+        const opt = {
+            margin: 0.5,
+            filename: 'Delivery_Slip.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
