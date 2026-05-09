@@ -50,6 +50,20 @@
 </head>
 
 <body>
+<script>
+    // Must be defined BEFORE any HTML calls them
+    function openModal(id) { 
+        document.getElementById(id).style.display = 'flex'; 
+    }
+
+    function closeModal(id) { 
+        document.getElementById(id).style.display = 'none'; 
+    }
+
+    // Expose globally for inline onclick=""
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+</script>
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
