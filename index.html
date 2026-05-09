@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Culligan Bottle Watter - Grande Prairie </title>
+    <title>LogiFlow - Grande Prairie Dispatch</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -55,7 +55,7 @@
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
-        <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> Culligan Bottle Watter - Grande Prairie</h1>
+        <h1 style="margin:0; font-size:1.6rem;"><i class="fas fa-truck-loading"></i> LogiFlow Dispatch</h1>
         <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
     </div>
     <div style="display:flex; gap:12px;">
@@ -216,9 +216,15 @@
             const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${stop.name}</b>`);
             markers.push(marker);
 
+            /* ADDED: STRIP ID FROM NAME FOR MANIFEST DISPLAY */
+            let displayTitle = stop.name;
+            if (displayTitle.includes('-')) {
+                displayTitle = displayTitle.split('-').slice(1).join('-').trim();
+            }
+
             const card = document.createElement('div');
             card.className = 'delivery-card';
-            card.innerHTML = `<strong>${i+1}. ${stop.name}</strong><br><small>${stop.address}</small>`;
+            card.innerHTML = `<strong>${i+1}. ${displayTitle}</strong><br><small>${stop.address}</small>`;
             
             card.onclick = () => {
                 map.flyTo([lat, lng], 15);
@@ -244,7 +250,7 @@
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
-        /* ADDED: LOGIC TO STRIP COMPANY ID FROM NAME FOR DISPLAY */
+        /* ADDED: LOGIC TO STRIP COMPANY ID FROM NAME FOR SLIP DISPLAY */
         let cleanName = stop.name;
         if (cleanName.includes('-')) {
             cleanName = cleanName.split('-').slice(1).join('-').trim();
