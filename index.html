@@ -122,18 +122,12 @@
             </div>
         </div>
         <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
-            <div class="product-selector-row" style="display:none;">
-                <select id="prodSelect1" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 1 --</option></select>
-                <input type="number" id="prodQty1" class="qty-input" value="1" onchange="syncSlipProducts()">
-                <select id="prodSelect2" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 2 --</option></select>
-                <input type="number" id="prodQty2" class="qty-input" value="1" onchange="syncSlipProducts()">
-            </div>
             <div id="slipPreview"></div>
         </div>
     </div>
 </div>
 
-<!-- START NEW ADDITION: PRODUCT MAINTENANCE MODAL -->
+<!-- START: PRODUCT MAINTENANCE MODAL -->
 <div id="productMaintModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 98%;">
         <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -164,7 +158,7 @@
         </div>
     </div>
 </div>
-<!-- END NEW ADDITION: PRODUCT MAINTENANCE MODAL -->
+<!-- END: PRODUCT MAINTENANCE MODAL -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -189,6 +183,7 @@
         await loadProductList(); 
     }
 
+    /* FIX: Corrected loadProductList to properly cycle and map headers for each CSV */
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
@@ -199,6 +194,8 @@
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
                 
+                if (lines.length < 2) continue;
+
                 const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
                 const unitMap = {
                     'case': headers.indexOf('case'),
@@ -213,7 +210,7 @@
 
                 lines.slice(1).forEach(line => {
                     const p = line.split(',');
-                    if(p[0]) {
+                    if(p[0] && p[0].trim() !== '') {
                         let availableUnits = [];
                         if (unitMap.case !== -1 && p[unitMap.case]) availableUnits.push({label: 'Case', price: parseFloat(p[unitMap.price_case]) || 0});
                         if (unitMap.box !== -1 && p[unitMap.box]) availableUnits.push({label: 'Box', price: parseFloat(p[unitMap.price_box]) || 0});
@@ -236,12 +233,8 @@
     }
 
     function populateDropdowns() {
-        const d1 = document.getElementById('prodSelect1');
-        const d2 = document.getElementById('prodSelect2');
         const activeProds = globalProducts.filter(p => p.active !== false);
-        const options = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
-        d1.innerHTML = '<option value="">-- Select Product 1 --</option>' + options;
-        d2.innerHTML = '<option value="">-- Select Product 2 --</option>' + options;
+        window.globalActiveOptions = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
     }
 
     function updateSettings() {
@@ -400,9 +393,6 @@
             </tr>`;
         });
 
-        const activeProds = globalProducts.filter(p => p.active !== false);
-        const productOptions = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
-
         preview.innerHTML = `
             <div class="culligan-slip">
                 <div style="display:flex; justify-content:space-between;">
@@ -428,7 +418,7 @@
                 <div class="no-print" style="margin-top: 20px; margin-bottom: 5px;">
                     <select class="product-select" style="width: 100%; border: 2px solid #004a99;" onchange="addProductToList(this.value)">
                         <option value="">-- Select Product to Add --</option>
-                        ${productOptions}
+                        ${window.globalActiveOptions}
                     </select>
                 </div>
 
@@ -487,7 +477,7 @@
     function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function emailSlip() { html2pdf().from(document.getElementById('slipPreview')).save('Delivery_Slip.pdf'); }
 
-    /* START NEW ADDITION: PRODUCT MAINTENANCE LOGIC */
+    /* ADDITIVE: PRODUCT MAINTENANCE FUNCTIONS */
     function openProductMaintenance() {
         renderProductMaintenanceTable();
         openModal('productMaintModal');
@@ -526,7 +516,6 @@
     function toggleProductStatus(idx) { globalProducts[idx].active = globalProducts[idx].active !== false ? false : true; renderProductMaintenanceTable(); populateDropdowns(); }
     function addNewProductRow() { globalProducts.push({ name: "New Product", size: "000ml", price: 0, units: [], source: "Products/Water.csv", active: true }); renderProductMaintenanceTable(); }
     function saveAllProducts() { alert("Database updated locally."); populateDropdowns(); closeModal('productMaintModal'); }
-    /* END NEW ADDITION: PRODUCT MAINTENANCE LOGIC */
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
