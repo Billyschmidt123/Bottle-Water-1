@@ -50,6 +50,20 @@
 
 <body>
 <script>
+    <script>
+// === TOKEN EARLY-LOAD SHIM (ADDITIVE FIX) ===
+if (typeof window.token === "undefined") {
+    try {
+        // Try to read token if it already exists in closure
+        if (typeof token !== "undefined") {
+            window.token = token;
+        }
+    } catch (e) {
+        // token not defined yet — will be set by hidden PAT block later
+    }
+}
+</script>
+
     function openModal(id) {
         const el = document.getElementById(id);
         if (el) el.style.display = 'flex';
