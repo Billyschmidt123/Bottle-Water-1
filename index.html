@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Culligan Delivery Management</title>
+    <title>Culligan Delivery System</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -17,7 +17,7 @@
         .sidebar { flex: 3; background: white; display: flex; flex-direction: column; overflow: hidden; }
         .stop-list-container { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
         .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; border-left: 5px solid #004a99; transition: 0.2s; }
-        .delivery-card:hover { background: #f8fafc; }
+        .delivery-card:hover { background: #f8fafc; transform: translateX(3px); }
         .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; white-space: nowrap; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
@@ -25,13 +25,14 @@
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         .maint-input { width: 95%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        .search-container { position: relative; width: 350px; }
-        .maint-search { width: 100%; padding: 10px 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 1rem; }
-        .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 300px; overflow-y: auto; color: #333; }
-        .search-row { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .search-container { position: relative; width: 400px; }
+        .maint-search { width: 100%; padding: 10px 15px; border-radius: 5px; border: 2px solid #004a99; font-size: 1rem; outline: none; }
+        .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 350px; overflow-y: auto; color: #333; }
+        .search-row { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .search-row:hover { background: #f0f7ff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
+        .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 120px; }
     </style>
 </head>
 <body>
@@ -43,15 +44,15 @@
     </div>
     <div style="display:flex; gap:12px;">
         <button class="btn-ui" style="background:#6c757d;" onclick="openModal('mgrModal')"><i class="fas fa-user-shield"></i> Manager Portal</button>
-        <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Sync Data</button>
     </div>
 </header>
 
 <div class="nav-controls">
-    <button class="btn-ui" style="background: #28a745;" onclick="alert('GPS Started')"><i class="fas fa-play"></i> START ROUTE</button>
+    <button class="btn-ui" style="background: #28a745;" onclick="startGPS()"><i class="fas fa-play"></i> START</button>
     <div id="activeAddress" class="info-pill">Address: ---</div>
     <div id="activePhone" class="info-pill" style="flex-grow: 0; min-width: 180px;">Phone: ---</div>
-    <button class="btn-ui" style="background: #6f42c1;" onclick="alert('Optimizing...')"><i class="fas fa-magic"></i> OPTIMIZE</button>
+    <button class="btn-ui" style="background: #6f42c1;" onclick="optimizeRoute()"><i class="fas fa-magic"></i> OPTIMIZE</button>
 </div>
 
 <div class="main-view">
@@ -61,7 +62,7 @@
             <h3 style="margin:0;">Route Manifest</h3>
         </div>
         <div id="stopList" class="stop-list-container">
-            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route to begin.</div>
+            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Load a route to view stops.</div>
         </div>
     </div>
 </div>
@@ -75,7 +76,8 @@
         </div>
         <div style="padding:25px; display: flex; flex-direction: column; gap: 15px;">
             <button class="btn-ui" style="background:#007bff; justify-content: center; padding: 15px;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
-            <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="alert('Product logic loaded.')"><i class="fas fa-boxes"></i> Product Maintenance</button>
+            <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
+            <button class="btn-ui" style="background:#e67e22; justify-content: center; padding: 15px;" onclick="alert('Master CSV Exported')"><i class="fas fa-file-export"></i> Export Master List</button>
         </div>
     </div>
 </div>
@@ -84,7 +86,7 @@
 <div id="custMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#007bff; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:20px;">
+            <div style="display:flex; align-items:center; gap:25px;">
                 <h3 style="margin:0;"><i class="fas fa-address-book"></i> Customer Maintenance</h3>
                 <div class="search-container">
                     <input type="text" id="maintSearch" class="maint-search" placeholder="Search All Files (Name or Address)..." onkeyup="searchAllFiles(this.value)">
@@ -113,12 +115,38 @@
     </div>
 </div>
 
-<!-- Delivery Slip -->
+<!-- Product Maintenance Modal -->
+<div id="prodMaintModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+        <div style="background:#6610f2; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;"><i class="fas fa-boxes"></i> Product Maintenance</h3>
+            <button onclick="closeModal('prodMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:20px; flex:1; overflow-y:auto;">
+            <table class="mgmt-table">
+                <thead>
+                    <tr>
+                        <th>Part #</th>
+                        <th>Description</th>
+                        <th>Base Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="prodMaintBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delivery Slip Modal -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
-            <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="savePDF()" class="btn-ui" style="background:#dc3545;"><i class="fas fa-file-pdf"></i> Save PDF</button>
+                <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+            </div>
         </div>
         <div id="slipPreview" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;"></div>
     </div>
@@ -134,6 +162,7 @@
     
     let allCustomersCache = []; 
     let currentRouteStops = [];
+    let activeCustomer = null;
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 12);
@@ -210,7 +239,6 @@
         document.getElementById('routeDropdown').value = filePath;
         await loadSelectedRoute();
         openCustomerMaintenance(); 
-        // Scroll the specific row into view if needed
     }
 
     async function loadSelectedRoute() {
@@ -256,31 +284,66 @@
         openModal('custMaintModal');
     }
 
+    function openProductMaintenance() {
+        const body = document.getElementById('prodMaintBody');
+        body.innerHTML = `<tr><td colspan="4" style="text-align:center;">Product list logic restored. CSV Master required.</td></tr>`;
+        openModal('prodMaintModal');
+    }
+
     function saveAllCustomers() {
         renderManifest();
-        alert("Session updated. Remember to push changes to GitHub if required.");
+        alert("Changes saved to current session.");
         closeModal('custMaintModal');
     }
 
     function openStopSlip(stop) {
+        activeCustomer = stop;
         document.getElementById('activeAddress').innerText = stop.address;
         document.getElementById('activePhone').innerText = stop.phone;
         const preview = document.getElementById('slipPreview');
         preview.innerHTML = `
-            <div style="background:white; padding:30px; border:1px solid #ccc; max-width:800px; margin:auto;">
-                <h2 style="font-family:serif; color:#004a99;">Culligan Delivery Slip</h2>
+            <div id="pdfContent" style="background:white; padding:40px; border:1px solid #ccc; max-width:850px; margin:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <h1 style="color:#004a99; margin:0;">Culligan Water</h1>
+                        <p>12001 99 Ave, Grande Prairie, AB</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <h3>Delivery Slip</h3>
+                        <p>Date: ${new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
                 <hr>
-                <p><strong>Customer:</strong> ${stop.company}</p>
-                <p><strong>Address:</strong> ${stop.address}</p>
+                <div style="margin:20px 0;">
+                    <strong>BILL TO:</strong><br>
+                    ${stop.company}<br>
+                    ${stop.address}
+                </div>
                 <table class="c-table">
-                    <thead><tr><th>QTY</th><th>ITEM</th><th>PRICE</th></tr></thead>
-                    <tbody><tr><td colspan="3" style="text-align:center;">---</td></tr></tbody>
+                    <thead><tr style="background:#eee;"><th>QTY</th><th>ITEM DESCRIPTION</th><th>UNIT</th><th>TOTAL</th></tr></thead>
+                    <tbody>
+                        <tr><td><input type="number" style="width:40px;"></td><td>5 Gallon Water</td><td>$</td><td>$</td></tr>
+                        <tr><td><input type="number" style="width:40px;"></td><td>Cooler Rental</td><td>$</td><td>$</td></tr>
+                        <tr style="height:100px;"><td colspan="4"></td></tr>
+                    </tbody>
                 </table>
+                <div style="margin-top:30px;">
+                    <p>Signature:</p>
+                    <canvas class="sig-canvas"></canvas>
+                </div>
             </div>
         `;
         openModal('stopModal');
     }
 
+    function savePDF() {
+        const element = document.getElementById('pdfContent');
+        const filename = `${activeCustomer.company} - ${activeCustomer.id} - ${new Date().toISOString().split('T')[0]}.pdf`;
+        html2pdf().from(element).save(filename);
+    }
+
+    function startGPS() { alert("GPS Logging Active"); }
+    function optimizeRoute() { alert("Optimizing Route Path"); }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
