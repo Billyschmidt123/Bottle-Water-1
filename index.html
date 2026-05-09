@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Culligan Bottle Water</title>
+    <title>Culligan Delivery Management</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -17,22 +17,21 @@
         .sidebar { flex: 3; background: white; display: flex; flex-direction: column; overflow: hidden; }
         .stop-list-container { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
         .delivery-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; border-left: 5px solid #004a99; transition: 0.2s; }
-        .delivery-card:hover { background: #f8fafc; transform: translateX(3px); }
+        .delivery-card:hover { background: #f8fafc; }
         .btn-ui { padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 8px; transition: 0.2s; white-space: nowrap; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 1300px; height: 90vh; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
         .mgmt-table { width: 100%; border-collapse: collapse; }
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .search-bar { background: #003366; border: 1px solid #0056b3; color: white; padding: 8px 12px; border-radius: 4px; width: 250px; }
-        .search-bar::placeholder { color: #88b0d8; }
+        .maint-input { width: 95%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; }
+        .search-container { position: relative; width: 350px; }
+        .maint-search { width: 100%; padding: 10px 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 1rem; }
+        .search-dropdown { position: absolute; top: 45px; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; display: none; max-height: 300px; overflow-y: auto; color: #333; }
+        .search-row { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .search-row:hover { background: #f0f7ff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
-        .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 150px; cursor: crosshair; }
-        .maint-input { width: 95%; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        .search-results-box { position: absolute; top: 55px; right: 250px; width: 400px; max-height: 400px; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1500; display: none; overflow-y: auto; color: #333; }
-        .search-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .search-item:hover { background: #f0f7ff; }
     </style>
 </head>
 <body>
@@ -42,15 +41,14 @@
         <h1 style="margin:0; font-size:1.5rem;"><i class="fas fa-tint"></i> Culligan Delivery</h1>
         <select id="routeDropdown" onchange="loadSelectedRoute()" style="background:#003366; color:white; border:1px solid #0056b3; padding:8px; border-radius:4px; font-weight:bold;"></select>
     </div>
-    <div style="display:flex; gap:12px; align-items: center; position: relative;">
-        <input type="text" id="globalSearch" class="search-bar" placeholder="Search All Routes..." onkeyup="handleGlobalSearch(this.value)">
-        <div id="searchResults" class="search-results-box"></div>
+    <div style="display:flex; gap:12px;">
         <button class="btn-ui" style="background:#6c757d;" onclick="openModal('mgrModal')"><i class="fas fa-user-shield"></i> Manager Portal</button>
+        <button class="btn-ui" style="background:#17a2b8;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
 </header>
 
 <div class="nav-controls">
-    <button class="btn-ui" style="background: #28a745;" onclick="alert('GPS Logged')"><i class="fas fa-play"></i> START</button>
+    <button class="btn-ui" style="background: #28a745;" onclick="alert('GPS Started')"><i class="fas fa-play"></i> START ROUTE</button>
     <div id="activeAddress" class="info-pill">Address: ---</div>
     <div id="activePhone" class="info-pill" style="flex-grow: 0; min-width: 180px;">Phone: ---</div>
     <button class="btn-ui" style="background: #6f42c1;" onclick="alert('Optimizing...')"><i class="fas fa-magic"></i> OPTIMIZE</button>
@@ -63,7 +61,7 @@
             <h3 style="margin:0;">Route Manifest</h3>
         </div>
         <div id="stopList" class="stop-list-container">
-            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route or search above.</div>
+            <div style="text-align:center; padding-top:40px; color:#a0aec0;">Select a route to begin.</div>
         </div>
     </div>
 </div>
@@ -78,16 +76,21 @@
         <div style="padding:25px; display: flex; flex-direction: column; gap: 15px;">
             <button class="btn-ui" style="background:#007bff; justify-content: center; padding: 15px;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
             <button class="btn-ui" style="background:#6610f2; justify-content: center; padding: 15px;" onclick="alert('Product logic loaded.')"><i class="fas fa-boxes"></i> Product Maintenance</button>
-            <button class="btn-ui" style="background:#28a745; justify-content: center; padding: 15px;" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh Data</button>
         </div>
     </div>
 </div>
 
-<!-- Customer Maintenance -->
+<!-- Customer Maintenance Modal -->
 <div id="custMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#007bff; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;"><i class="fas fa-address-book"></i> Customer Maintenance</h3>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <h3 style="margin:0;"><i class="fas fa-address-book"></i> Customer Maintenance</h3>
+                <div class="search-container">
+                    <input type="text" id="maintSearch" class="maint-search" placeholder="Search All Files (Name or Address)..." onkeyup="searchAllFiles(this.value)">
+                    <div id="maintSearchResults" class="search-dropdown"></div>
+                </div>
+            </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="saveAllCustomers()" class="btn-ui" style="background:#28a745;"><i class="fas fa-save"></i> Save Changes</button>
                 <button onclick="closeModal('custMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
@@ -97,8 +100,8 @@
             <table class="mgmt-table">
                 <thead>
                     <tr>
-                        <th style="width:100px;">ID</th>
-                        <th>Name</th>
+                        <th style="width:100px;">Account #</th>
+                        <th>Name / Company</th>
                         <th>Address</th>
                         <th>Phone</th>
                         <th>Action</th>
@@ -129,16 +132,15 @@
     const REPO_NAME = "Bottle-Water-1";
     const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
     
-    let allRouteData = []; // Cache for global search
+    let allCustomersCache = []; 
     let currentRouteStops = [];
-    let globalProducts = [];
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse");
         await loadDynamicRoutes();
-        await preCacheAllRoutes(); // Load data for search
+        await preCacheAllRoutes(); 
     }
 
     async function loadDynamicRoutes() {
@@ -149,13 +151,14 @@
             let options = files.filter(f => f.name.endsWith('.csv'))
                                .map(f => `<option value="${f.path}">${f.name.replace('.csv','')}</option>`);
             dropdown.innerHTML = '<option value="">-- Select Route --</option>' + options.join('');
-        } catch (e) { console.error("Header load failed"); }
+        } catch (e) { console.error("Routes failed to load"); }
     }
 
     async function preCacheAllRoutes() {
         try {
             const res = await fetch(`${REPO_BASE}/routes`);
             const files = await res.json();
+            allCustomersCache = [];
             for (let file of files) {
                 if (!file.name.endsWith('.csv')) continue;
                 const contentRes = await fetch(file.download_url);
@@ -163,34 +166,35 @@
                 const lines = text.split('\n').slice(1);
                 lines.forEach(line => {
                     const p = line.split(',');
-                    if (p[0]) {
-                        allRouteData.push({
+                    if (p[0] && p[0].trim() !== '') {
+                        allCustomersCache.push({
                             id: p[0].trim(),
                             name: p[3]?.trim() || p[0].trim(),
                             address: [p[4], p[5], p[6]].filter(Boolean).join(' '),
+                            phone: p[2] || '---',
                             routeFile: file.path,
                             routeName: file.name.replace('.csv','')
                         });
                     }
                 });
             }
-        } catch (e) { console.warn("Caching failed"); }
+        } catch (e) { console.warn("Caching error"); }
     }
 
-    function handleGlobalSearch(query) {
-        const resultsBox = document.getElementById('searchResults');
+    function searchAllFiles(query) {
+        const resultsBox = document.getElementById('maintSearchResults');
         if (query.length < 2) { resultsBox.style.display = 'none'; return; }
         
-        const filtered = allRouteData.filter(c => 
+        const filtered = allCustomersCache.filter(c => 
             c.name.toLowerCase().includes(query.toLowerCase()) || 
             c.address.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 10);
+        ).slice(0, 15);
 
         if (filtered.length > 0) {
             resultsBox.innerHTML = filtered.map(c => `
-                <div class="search-item" onclick="jumpToCustomer('${c.routeFile}', '${c.id}')">
+                <div class="search-row" onclick="selectFromSearch('${c.routeFile}', '${c.id}')">
                     <strong>${c.name}</strong><br>
-                    <small>${c.address} (${c.routeName})</small>
+                    <small>${c.address} <span style="color:#004a99;">(${c.routeName})</span></small>
                 </div>
             `).join('');
             resultsBox.style.display = 'block';
@@ -200,12 +204,13 @@
         }
     }
 
-    async function jumpToCustomer(filePath, customerId) {
-        document.getElementById('searchResults').style.display = 'none';
+    async function selectFromSearch(filePath, customerId) {
+        document.getElementById('maintSearchResults').style.display = 'none';
+        document.getElementById('maintSearch').value = "";
         document.getElementById('routeDropdown').value = filePath;
         await loadSelectedRoute();
-        const stop = currentRouteStops.find(s => s.id === customerId);
-        if (stop) openStopSlip(stop);
+        openCustomerMaintenance(); 
+        // Scroll the specific row into view if needed
     }
 
     async function loadSelectedRoute() {
@@ -221,7 +226,7 @@
                 return { id: p[0].trim(), company: p[3]?.trim() || 'Customer', address: [p[4], p[5], p[6]].filter(Boolean).join(' '), phone: p[2] || '---' };
             });
             renderManifest();
-        } catch (e) { alert("Error loading route data."); }
+        } catch (e) { console.error("Parse error"); }
     }
 
     function renderManifest() {
@@ -235,21 +240,25 @@
 
     function openCustomerMaintenance() {
         const body = document.getElementById('custMaintBody');
-        body.innerHTML = currentRouteStops.length ? currentRouteStops.map((s, i) => `
-            <tr>
-                <td><input type="text" class="maint-input" value="${s.id}" onchange="currentRouteStops[${i}].id=this.value"></td>
-                <td><input type="text" class="maint-input" value="${s.company}" onchange="currentRouteStops[${i}].company=this.value"></td>
-                <td><input type="text" class="maint-input" value="${s.address}" onchange="currentRouteStops[${i}].address=this.value"></td>
-                <td><input type="text" class="maint-input" value="${s.phone}" onchange="currentRouteStops[${i}].phone=this.value"></td>
-                <td><button onclick="currentRouteStops.splice(${i},1); openCustomerMaintenance();" style="color:red; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
-            </tr>
-        `).join('') : '<tr><td colspan="5" style="text-align:center; padding:20px;">No customers to show. Load a route first.</td></tr>';
+        if (!currentRouteStops.length) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">No route selected. Use search or the dropdown above.</td></tr>';
+        } else {
+            body.innerHTML = currentRouteStops.map((s, i) => `
+                <tr>
+                    <td><input type="text" class="maint-input" value="${s.id}" onchange="currentRouteStops[${i}].id=this.value"></td>
+                    <td><input type="text" class="maint-input" value="${s.company}" onchange="currentRouteStops[${i}].company=this.value"></td>
+                    <td><input type="text" class="maint-input" value="${s.address}" onchange="currentRouteStops[${i}].address=this.value"></td>
+                    <td><input type="text" class="maint-input" value="${s.phone}" onchange="currentRouteStops[${i}].phone=this.value"></td>
+                    <td><button onclick="currentRouteStops.splice(${i},1); openCustomerMaintenance();" style="color:red; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
         openModal('custMaintModal');
     }
 
     function saveAllCustomers() {
         renderManifest();
-        alert("Changes saved to current session.");
+        alert("Session updated. Remember to push changes to GitHub if required.");
         closeModal('custMaintModal');
     }
 
@@ -259,14 +268,13 @@
         const preview = document.getElementById('slipPreview');
         preview.innerHTML = `
             <div style="background:white; padding:30px; border:1px solid #ccc; max-width:800px; margin:auto;">
-                <h2 style="font-family:serif; color:#004a99;">Culligan Delivery</h2>
-                <div style="border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:10px;">
-                    <strong>CUSTOMER:</strong> ${stop.company}<br>
-                    <strong>ADDRESS:</strong> ${stop.address}
-                </div>
+                <h2 style="font-family:serif; color:#004a99;">Culligan Delivery Slip</h2>
+                <hr>
+                <p><strong>Customer:</strong> ${stop.company}</p>
+                <p><strong>Address:</strong> ${stop.address}</p>
                 <table class="c-table">
-                    <thead><tr><th style="width:60px;">QTY</th><th>DESCRIPTION</th><th>TOTAL</th></tr></thead>
-                    <tbody><tr><td colspan="3" style="text-align:center; padding:20px;">Add items to begin...</td></tr></tbody>
+                    <thead><tr><th>QTY</th><th>ITEM</th><th>PRICE</th></tr></thead>
+                    <tbody><tr><td colspan="3" style="text-align:center;">---</td></tr></tbody>
                 </table>
             </div>
         `;
