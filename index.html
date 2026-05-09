@@ -539,35 +539,62 @@ function openCustomerMaintenance() {
 function renderCustomerTable() {
     const body = document.getElementById('customerMaintBody');
     const searchInput = document.getElementById('custSearch');
-    const search = (searchInput && searchInput.value) ? searchInput.value : "";
+    const search = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
     body.innerHTML = "";
+
     if (!customerMaintHeaders.length) {
         deriveCustomerMaintHeaders();
     }
+
     customerMaintList
         .map((c, idx) => ({ c, idx }))
         .filter(({ c }) => !c.__deleted)
         .filter(({ c }) => {
-            if (!search.trim()) return true;
-            const s = search.toLowerCase();
-            const joined = customerMaintHeaders.map(h => (c[h] || "")).join(" ").toLowerCase();
-            return joined.includes(s);
+            if (!search) return true;
+            const joined = customerMaintHeaders
+                .map(h => (c[h] || "").toString().toLowerCase())
+                .join(" ");
+            return joined.includes(search);
         })
         .forEach(({ c, idx }) => {
             const row = document.createElement('tr');
-            let cells = "";
+
+            // Build editable cells
             customerMaintHeaders.forEach(h => {
-                const val = c[h] !== undefined ? c[h] : "";
-                const safeVal = String(val).replace(/"/g, '&quot;');
-                const safeHeader = h.replace(/'/g, "\\'");
-                cells += `<td><input type="text" class="maint-input" value="${safeVal}" onchange="updateCustomerHeaderField(${idx}, '${safeHeader}', this.value)"></td>`;
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = "text";
+                input.className = "maint-input";
+                input.value = c[h] || "";
+                input.onchange = () => updateCustomerHeaderField(idx, h, input.value);
+                td.appendChild(input);
+                row.appendChild(td);
             });
-            row.innerHTML = cells + `
-                <td style="display:flex; gap:6px;">
-                    <button class="btn-ui" style="background:#6c757d; padding:5px 10px;" onclick="openCustomerEditModal(${idx})"><i class="fas fa-pen"></i></button>
-                    <button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
+
+            // Action buttons
+            const tdActions = document.createElement('td');
+            tdActions.style.display = "flex";
+            tdActions.style.gap = "6px";
+
+            const btnEdit = document.createElement('button');
+            btnEdit.className = "btn-ui";
+            btnEdit.style.background = "#6c757d";
+            btnEdit.style.padding = "5px 10px";
+            btnEdit.innerHTML = `<i class="fas fa-pen"></i>`;
+            btnEdit.onclick = () => openCustomerEditModal(idx);
+
+            const btnDelete = document.createElement('button');
+            btnDelete.className = "btn-ui";
+            btnDelete.style.background = "#dc3545";
+            btnDelete.style.padding = "5px 10px";
+            btnDelete.innerHTML = `<i class="fas fa-trash"></i>`;
+            btnDelete.onclick = () => removeCustomer(idx);
+
+            tdActions.appendChild(btnEdit);
+            tdActions.appendChild(btnDelete);
+            row.appendChild(tdActions);
+
             body.appendChild(row);
         });
 }
