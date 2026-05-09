@@ -107,15 +107,15 @@
     </div>
 </div>
 
-<!-- ADDED: UNIFORM MODAL FOR STOP SLIP -->
+<!-- MODAL FOR STOP SLIP -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> Delivery Slip</h3>
             <div style="display:flex; gap:10px;">
-                <!-- ADDED: Signature Clear Button -->
                 <button onclick="clearSignature()" class="btn-ui" style="background:#ffc107; color:#212529;"><i class="fas fa-eraser"></i> Clear Sig</button>
-                <button onclick="printSlip()" class="btn-ui" style="background:#fff; color:#28a745;"><i class="fas fa-print"></i> Print</button>
+                <!-- ADDED CHANGE: Renamed Print to Email -->
+                <button onclick="emailSlip()" class="btn-ui" style="background:#fff; color:#28a745;"><i class="fas fa-envelope"></i> Email</button>
                 <button onclick="closeModal('stopModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
         </div>
@@ -136,7 +136,6 @@
     const REPO_NAME = "Bottle-Water-1";
     const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
 
-    /* ADDED: SIGNATURE VARIABLES */
     let sigCanvas, sigCtx, drawing = false;
 
     async function initApp() {
@@ -166,11 +165,9 @@
                 }
             });
 
-            // Populate Main Dropdown
             dropdown.innerHTML = '<option value="">-- Select Route --</option>' + 
                 options.map(o => `<option value="${o.path}">${o.name}</option>`).join('');
 
-            // Populate Management Table
             mgrTable.innerHTML = options.map(o => `
                 <tr>
                     <td>${o.name}</td>
@@ -224,13 +221,12 @@
             card.className = 'delivery-card';
             card.innerHTML = `<strong>${i+1}. ${stop.name}</strong><br><small>${stop.address}</small>`;
             
-            /* ADDITIVE CHANGE: Enhanced onclick to open slip modal */
             card.onclick = () => {
                 map.flyTo([lat, lng], 15);
                 marker.openPopup();
                 document.getElementById('activeAddress').innerText = stop.address;
                 document.getElementById('activePhone').innerText = stop.phone;
-                openStopSlip(stop); // New module call
+                openStopSlip(stop);
             };
             stopList.appendChild(card);
         });
@@ -242,12 +238,8 @@
     function startRoute() { alert("GPS Logging Started."); }
     function runEndOfDay() { if(confirm("Complete today's route?")) location.reload(); }
     function optimizeCurrent() { alert("Route re-sequenced."); }
+    function downloadBackup() { alert("Backup system ready. Generating CSV snapshot..."); }
 
-    function downloadBackup() {
-        alert("Backup system ready. Generating CSV snapshot...");
-    }
-
-    /* ADDED MODULE: STOP LIST OPENING LOGIC (CULLIGAN STYLED SLIP) */
     function openStopSlip(stop) {
         const preview = document.getElementById('slipPreview');
         const now = new Date();
@@ -280,7 +272,8 @@
                             <span>${dateStr}</span>
                         </div>
                         <div style="display:flex;">
-                            <span style="width:100px; font-weight:bold;">SOLD TO:</span>
+                            <!-- ADDED CHANGE: Renamed Company ID label to COMPANY -->
+                            <span style="width:100px; font-weight:bold;">COMPANY:</span>
                             <span>${stop.name}<br>${stop.address}</span>
                         </div>
                     </div>
@@ -332,13 +325,11 @@
         initSignaturePad();
     }
 
-    /* ADDED MODULE: SIGNATURE PAD LOGIC */
     function initSignaturePad() {
         sigCanvas = document.getElementById('signaturePad');
         if (!sigCanvas) return;
         sigCtx = sigCanvas.getContext('2d');
         
-        // Match canvas display size
         sigCanvas.width = sigCanvas.offsetWidth;
         sigCanvas.height = sigCanvas.offsetHeight;
         sigCtx.strokeStyle = "#00008b";
@@ -371,7 +362,8 @@
         if (sigCtx && sigCanvas) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
     }
 
-    function printSlip() {
+    /* ADDED CHANGE: Renamed function from printSlip to emailSlip */
+    function emailSlip() {
         const element = document.getElementById('slipPreview');
         const opt = {
             margin: 0.5,
