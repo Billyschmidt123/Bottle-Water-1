@@ -10,29 +10,33 @@
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
-        header { background: #004a99; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        #map { flex: 1; height: 100%; }
-        .side-panel { width: 350px; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; box-shadow: -2px 0 5px rgba(0,0,0,0.05); }
+        header { background: #004a99; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; height: 60px; box-sizing: border-box; }
+        .main-container { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 60px); }
+        #map { flex: 1; background: #e5e3df; }
+        .side-panel { width: 350px; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; }
         .panel-header { padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
         .stop-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .btn-top { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .stop-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+        .stop-item:hover { background: #f0f7ff; }
     </style>
 </head>
 
 <body>
 
 <header>
-    <h1 style="margin:0;">LogiFlow Delivery</h1>
+    <h1 style="margin:0; font-size: 20px;">LogiFlow Delivery</h1>
+    <div id="status" style="font-size: 12px; opacity: 0.8;">Initializing...</div>
 </header>
 
 <div class="main-container">
     <div id="map"></div>
     <div class="side-panel">
         <div class="panel-header">
-            <h3>Routes</h3>
+            <h3 style="margin:0;">Routes & Stops</h3>
         </div>
-        <div id="stopList" class="stop-list"></div>
+        <div id="stopList" class="stop-list">
+            <div style="padding:20px; text-align:center; color:#666;">Loading route data...</div>
+        </div>
     </div>
 </div>
 
@@ -40,84 +44,109 @@
 
 <script>
 (function () {
-
-    // ✅ FIXED REPO
     const repo = 'Billyschmidt123/Bottle-Water-1';
-
     const _k = [103,105,116,104,117,98,95,112,97,116,95,49,49,66,83,88,86,55,74,73,48,113,121,120,100,49,112,67,82,87,90,66,68,95,71,106,53,113,100,67,97,55,107,110,65,98,113,121,74,97,51,66,74,106,108,112,110,120,72,65,85,81,69,90,113,102,113,88,102,53,71,116,89,69,85,112,72,55,89,84,54,67,67,73,70,121,100,105,51,86,110,79,122];
     const token = _k.map(c => String.fromCharCode(c)).join('');
 
+    let map, markerGroup;
     let csvHeaders = [];
     let globalCustomers = [];
 
-    // ✅ SAFE FETCH (FIXES SPACES LIKE "Week 1 Friday.csv")
-    async function fetchCSV(path) {
-        try {
-            const safePath = path
-                .split('/')
-                .map(encodeURIComponent)
-                .join('/');
+    function initMap() {
+        // Initializing map centered on Grande Prairie
+        map = L.map('map').setView([55.1708, -118.7947], 12);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-            const res = await fetch(
-                `https://api.github.com/repos/${repo}/contents/${safePath}`,
-                { headers: { Authorization: `token ${token}` } }
-            );
-
-            return res;
-        } catch (e) {
-            console.error("Fetch error:", e);
-            return null;
-        }
+        markerGroup = L.layerGroup().addTo(map);
     }
 
-    // ✅ LOAD ROUTES
     async function loadAllCustomers() {
+        const statusEl = document.getElementById("status");
         try {
-            const res = await fetch(
-                `https://api.github.com/repos/${repo}/contents/routes`,
-                { headers: { Authorization: `token ${token}` } }
-            );
+            const res = await fetch(`https://api.github.com/repos/${repo}/contents/routes`, {
+                headers: { Authorization: `token ${token}` }
+            });
 
+            if (!res.ok) throw new Error("Could not connect to GitHub");
+            
             const files = await res.json();
-
             globalCustomers = [];
 
             for (let f of files) {
                 if (!f.name.endsWith('.csv')) continue;
-
+                
+                statusEl.innerText = `Loading ${f.name}...`;
                 const txt = await (await fetch(f.download_url)).text();
                 const lines = txt.split('\n').filter(l => l.trim());
 
-                if (!csvHeaders.length) {
-                    csvHeaders = lines[0].split(',');
-                }
+                if (lines.length > 0) {
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    if (csvHeaders.length === 0) csvHeaders = headers;
 
-                lines.slice(1).forEach(line => {
-                    const vals = line.split(',');
-                    let obj = {};
-                    csvHeaders.forEach((h, i) => obj[h] = vals[i] || '');
-                    obj.__route = f.name;
-                    globalCustomers.push(obj);
-                });
+                    lines.slice(1).forEach(line => {
+                        const vals = line.split(',');
+                        let obj = {};
+                        headers.forEach((h, i) => obj[h] = vals[i] ? vals[i].trim() : '');
+                        obj.__route = f.name;
+                        globalCustomers.push(obj);
+                    });
+                }
             }
 
+            statusEl.innerText = "Routes Loaded";
             render();
         } catch (err) {
-            console.error("Route load failed", err);
+            console.error(err);
+            statusEl.innerText = "Error loading data";
+            document.getElementById("stopList").innerHTML = `<div style="padding:20px; color:red;">Failed to load CSV files. Check console for details.</div>`;
         }
     }
 
     function render() {
         const el = document.getElementById("stopList");
-        el.innerHTML = globalCustomers.slice(0, 50).map((c, i) =>
-            `<div style="padding:10px;border-bottom:1px solid #eee;">
-                <b>${c[csvHeaders[0]] || "No Name"}</b><br>
-                <small>${c.Address || ""}</small>
-            </div>`
-        ).join('');
+        markerGroup.clearLayers();
+
+        if (globalCustomers.length === 0) {
+            el.innerHTML = '<div style="padding:20px;">No customers found in CSV files.</div>';
+            return;
+        }
+
+        el.innerHTML = globalCustomers.map((c, i) => {
+            const name = c[csvHeaders[0]] || "Unknown Customer";
+            const addr = c.Address || "No Address Provided";
+            
+            // Add markers if coordinates exist
+            if (c.Latitude && c.Longitude) {
+                const marker = L.marker([parseFloat(c.Latitude), parseFloat(c.Longitude)])
+                    .bindPopup(`<b>${name}</b><br>${addr}`);
+                markerGroup.addLayer(marker);
+            }
+
+            return `
+                <div class="stop-item" onclick="focusStop(${i})">
+                    <div style="font-weight:bold; color:#004a99;">${name}</div>
+                    <div style="font-size:12px; color:#555;">${addr}</div>
+                    <div style="font-size:10px; color:#999; margin-top:4px;">File: ${c.__route}</div>
+                </div>`;
+        }).join('');
     }
 
-    window.addEventListener("load", loadAllCustomers);
+    window.focusStop = function(index) {
+        const c = globalCustomers[index];
+        if (c.Latitude && c.Longitude) {
+            map.setView([c.Latitude, c.Longitude], 16);
+        } else {
+            alert("No coordinates found for this stop.");
+        }
+    };
+
+    window.addEventListener("load", () => {
+        initMap();
+        loadAllCustomers();
+    });
 
 })();
 </script>
