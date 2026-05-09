@@ -84,9 +84,7 @@
         </div>
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
-                <!-- RESTORED: Fully Functional Customer Maintenance Trigger -->
                 <button class="btn-ui" style="background:#007bff;" onclick="openCustomerMaintenance()"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
-                <!-- ADDED: Functional Product Maintenance Trigger -->
                 <button class="btn-ui" style="background:#6610f2;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
                 <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
                 <button class="btn-ui" style="background:#28a745;" onclick="alert('Manual Entry Mode Active')"><i class="fas fa-phone"></i> Call-In Order</button>
@@ -111,7 +109,6 @@
     </div>
 </div>
 
-<!-- START: ORIGINAL CUSTOMER MAINTENANCE MODAL -->
 <div id="custMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#007bff; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -132,7 +129,6 @@
         </div>
     </div>
 </div>
-<!-- END: ORIGINAL CUSTOMER MAINTENANCE MODAL -->
 
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
@@ -150,7 +146,6 @@
     </div>
 </div>
 
-<!-- START: PRODUCT MAINTENANCE MODAL -->
 <div id="productMaintModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 98%;">
         <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -181,7 +176,6 @@
         </div>
     </div>
 </div>
-<!-- END: PRODUCT MAINTENANCE MODAL -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -207,7 +201,7 @@
         await loadProductList(); 
     }
 
-    /* FIX: Corrected loadProductList to map Coffee.csv headers independently */
+    /* FIX: Improved parsing and header detection to ensure Coffee products load correctly */
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
@@ -221,16 +215,19 @@
                 if (lines.length < 2) continue;
 
                 const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-                // Mapping per-file to ensure Coffee columns align
+                
+                // Flexible mapping for different CSV layouts
+                const findIdx = (arr) => arr.find(term => headers.includes(term));
+                
                 const unitMap = {
-                    'case': headers.indexOf('case'),
-                    'box': headers.indexOf('box'),
-                    'sleeve': headers.indexOf('sleeve'),
-                    'bottle': headers.indexOf('bottle') !== -1 ? headers.indexOf('bottle') : headers.indexOf('jug'),
-                    'price_case': headers.indexOf('price case'),
-                    'price_box': headers.indexOf('price box'),
-                    'price_sleeve': headers.indexOf('price sleeve'),
-                    'price_bottle': headers.indexOf('price bottle') !== -1 ? headers.indexOf('price bottle') : headers.indexOf('price jug')
+                    'case': headers.indexOf(findIdx(['case'])),
+                    'box': headers.indexOf(findIdx(['box'])),
+                    'sleeve': headers.indexOf(findIdx(['sleeve'])),
+                    'bottle': headers.indexOf(findIdx(['bottle', 'jug', 'item'])),
+                    'price_case': headers.indexOf(findIdx(['price case', 'case price'])),
+                    'price_box': headers.indexOf(findIdx(['price box', 'box price'])),
+                    'price_sleeve': headers.indexOf(findIdx(['price sleeve', 'sleeve price'])),
+                    'price_bottle': headers.indexOf(findIdx(['price bottle', 'bottle price', 'price jug', 'price item']))
                 };
 
                 lines.slice(1).forEach(line => {
@@ -292,6 +289,7 @@
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
             
+            // FIX: Populating global stops variable so maintenance table works
             currentRouteStops = lines.slice(1).map(line => {
                 const parts = line.split(',');
                 const combinedAddr = [parts[4], parts[5], parts[6], parts[7]]
@@ -299,10 +297,10 @@
                                      .join(' ').trim();
                 
                 return { 
-                    id: parts[0]?.trim(), 
-                    address: combinedAddr || parts[1]?.trim(),
+                    id: parts[0]?.trim() || 'N/A', 
+                    address: combinedAddr || parts[1]?.trim() || 'No Address',
                     phone: parts[2]?.trim() || '---',
-                    company: parts[3]?.trim() || parts[0]?.trim()
+                    company: parts[3]?.trim() || parts[0]?.trim() || 'Unnamed'
                 };
             });
             renderManifest(currentRouteStops);
@@ -340,21 +338,25 @@
     function optimizeCurrent() { alert("Route re-sequenced."); }
     function downloadBackup() { alert("Backup system ready."); }
 
-    /* RESTORED: FULL CUSTOMER MAINTENANCE LOGIC */
+    /* FIX: Populating table using currentRouteStops data */
     function openCustomerMaintenance() {
         const body = document.getElementById('custMaintBody');
         body.innerHTML = "";
-        currentRouteStops.forEach(stop => {
-            const row = `<tr>
-                <td>${stop.id}</td>
-                <td><input type="text" class="maint-input" value="${stop.company}"></td>
-                <td><input type="text" class="maint-input" value="${stop.address}"></td>
-                <td><input type="text" class="maint-input" value="${stop.phone}"></td>
-                <td><span style="color:green; font-weight:bold;">Active</span></td>
-                <td><button class="btn-ui" style="background:#007bff; padding:5px 10px;">Update</button></td>
-            </tr>`;
-            body.insertAdjacentHTML('beforeend', row);
-        });
+        if (currentRouteStops.length === 0) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Please load a route first.</td></tr>';
+        } else {
+            currentRouteStops.forEach(stop => {
+                const row = `<tr>
+                    <td>${stop.id}</td>
+                    <td><input type="text" class="maint-input" value="${stop.company}"></td>
+                    <td><input type="text" class="maint-input" value="${stop.address}"></td>
+                    <td><input type="text" class="maint-input" value="${stop.phone}"></td>
+                    <td><span style="color:green; font-weight:bold;">Active</span></td>
+                    <td><button class="btn-ui" style="background:#007bff; padding:5px 10px;">Update</button></td>
+                </tr>`;
+                body.insertAdjacentHTML('beforeend', row);
+            });
+        }
         openModal('custMaintModal');
     }
 
@@ -520,7 +522,7 @@
     function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function emailSlip() { html2pdf().from(document.getElementById('slipPreview')).save('Delivery_Slip.pdf'); }
 
-    /* ADDITIVE: PRODUCT MAINTENANCE FUNCTIONS */
+    /* FIX: Product Maintenance functions */
     function openProductMaintenance() {
         renderProductMaintenanceTable();
         openModal('productMaintModal');
