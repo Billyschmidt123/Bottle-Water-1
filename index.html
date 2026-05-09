@@ -29,18 +29,15 @@
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 
-        /* Slip */
         #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
         .culligan-slip { font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; max-width: 800px; margin: auto; background: #fff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
 
-        /* Customer Edit Modal */
         .edit-field-row { margin-bottom: 10px; }
         .edit-field-row label { display:block; font-size:0.85rem; margin-bottom:3px; color:#4a5568; }
         .edit-field-row input { width:100%; padding:6px 8px; border:1px solid #cbd5e0; border-radius:4px; font-size:0.9rem; }
 
-        /* Loading overlay */
         #customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
         .progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
         .progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
@@ -53,7 +50,6 @@
 
 <body>
 <script>
-    // Modal helpers must exist before any HTML onclick uses them
     function openModal(id) {
         const el = document.getElementById(id);
         if (el) el.style.display = 'flex';
@@ -93,7 +89,6 @@
     </div>
 </div>
 
-<!-- Manager Modal -->
 <div id="mgrModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#004a99; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -113,7 +108,6 @@
     </div>
 </div>
 
-<!-- Stop Slip Modal -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -127,7 +121,6 @@
     </div>
 </div>
 
-<!-- Product Maintenance Modal -->
 <div id="productMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -143,7 +136,6 @@
     </div>
 </div>
 
-<!-- Customer Maintenance Modal -->
 <div id="customerMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#155724; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -153,7 +145,7 @@
 
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="margin-bottom:15px; display:flex; gap:10px;">
-                <input type="text" id="custSearch" placeholder="Search customer name or address..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                <input type="text" id="custSearch" placeholder="Search customer name or address..." style="flex:1; padding:10px; border:1px solid:#ccc; border-radius:5px;">
                 <button class="btn-ui" style="background:#28a745;" onclick="addNewCustomerRow()"><i class="fas fa-user-plus"></i> New Customer</button>
             </div>
 
@@ -169,7 +161,6 @@
     </div>
 </div>
 
-<!-- Customer Edit Modal -->
 <div id="customerEditModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#1f2933; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -185,7 +176,6 @@
     </div>
 </div>
 
-<!-- Loading Overlay -->
 <div id="customerMaintLoadingOverlay" class="modal-overlay">
     <div class="modal-content">
         <div style="padding:20px;">
@@ -200,14 +190,11 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-/* ============================================================
-   GLOBALS
-============================================================ */
 let map, markers = [];
 const warehouseCoord = [55.1707, -118.7947];
 const REPO_OWNER = "Billyschmidt123";
-const REPO_NAME = "Bottle-Water-1";
-const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
+const REPO_NAME  = "Bottle-Water-1";
+const REPO_BASE  = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
 
 let globalProducts = [];
 let globalCustomers = [];
@@ -219,9 +206,6 @@ let currentEditCustomerIndex = null;
 let totalRouteFiles = 0;
 let scannedRouteFiles = 0;
 
-/* ============================================================
-   UTILITIES
-============================================================ */
 function showCustomerMaintLoading(show) {
     document.getElementById('customerMaintLoadingOverlay').style.display = show ? 'flex' : 'none';
 }
@@ -233,9 +217,6 @@ function updateCustomerScanProgress() {
         `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
 }
 
-/* ============================================================
-   INIT
-============================================================ */
 async function initApp() {
     map = L.map('map').setView(warehouseCoord, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -245,9 +226,6 @@ async function initApp() {
     await loadProductList();
 }
 
-/* ============================================================
-   PRODUCT LOADING
-============================================================ */
 async function loadProductList() {
     const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
 
@@ -274,9 +252,6 @@ async function loadProductList() {
     }
 }
 
-/* ============================================================
-   ROUTE LOADING
-============================================================ */
 async function loadDynamicRoutes() {
     const dropdown = document.getElementById('routeDropdown');
 
@@ -295,7 +270,6 @@ async function loadDynamicRoutes() {
             '<option value="">-- Select Route --</option>' +
             files.map(f => `<option value="${f.path}">${f.name.replace('.csv', '')}</option>`).join('');
 
-        // Also populate manager table
         const mgrBody = document.getElementById('mgrTableBody');
         mgrBody.innerHTML = "";
         files.forEach(f => {
@@ -311,7 +285,6 @@ async function loadSelectedRoute() {
     const path = document.getElementById('routeDropdown').value;
     if (!path) return;
 
-    // Clear old markers
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
@@ -343,9 +316,6 @@ async function loadSelectedRoute() {
     }
 }
 
-/* ============================================================
-   MANIFEST / STOP LIST
-============================================================ */
 function renderManifest(customers) {
     const stopList = document.getElementById('stopList');
     stopList.innerHTML = "";
@@ -390,9 +360,6 @@ function openStopSlip(idx) {
     openModal('stopModal');
 }
 
-/* ============================================================
-   PRODUCT MAINTENANCE
-============================================================ */
 function openProductMaintenance() {
     const body = document.getElementById('productMaintBody');
     body.innerHTML = "";
@@ -414,10 +381,6 @@ function deactivateProduct(idx) {
     globalProducts[idx].active = false;
 }
 
-/* ============================================================
-   CUSTOMER MAINTENANCE – HEADER-DRIVEN
-============================================================ */
-// Load all route customers AND extract real CSV headers
 async function loadAllRouteCustomersForMaintenance() {
     customerMaintList = [];
     customerMaintHeaders = [];
@@ -520,8 +483,7 @@ function buildCustomerMaintTableHeader() {
     thead.appendChild(tr);
 }
 
-// OVERRIDE: openCustomerMaintenance – include loading + headers
-function openCustomerMaintenance() {
+function _openCustomerMaintenanceImpl() {
     showCustomerMaintLoading(true);
     loadAllRouteCustomersForMaintenance().then(() => {
         deriveCustomerMaintHeaders();
@@ -534,8 +496,8 @@ function openCustomerMaintenance() {
         openModal('customerMaintModal');
     });
 }
+window.openCustomerMaintenance = _openCustomerMaintenanceImpl;
 
-// OVERRIDE: renderCustomerTable – header-based fields and edit/delete
 function renderCustomerTable() {
     const body = document.getElementById('customerMaintBody');
     const searchInput = document.getElementById('custSearch');
@@ -560,7 +522,6 @@ function renderCustomerTable() {
         .forEach(({ c, idx }) => {
             const row = document.createElement('tr');
 
-            // Build editable cells
             customerMaintHeaders.forEach(h => {
                 const td = document.createElement('td');
                 const input = document.createElement('input');
@@ -572,7 +533,6 @@ function renderCustomerTable() {
                 row.appendChild(td);
             });
 
-            // Action buttons
             const tdActions = document.createElement('td');
             tdActions.style.display = "flex";
             tdActions.style.gap = "6px";
@@ -599,13 +559,11 @@ function renderCustomerTable() {
         });
 }
 
-// header-based field updater used by table inputs
 function updateCustomerHeaderField(idx, header, value) {
     if (!customerMaintList[idx]) return;
     customerMaintList[idx][header] = value;
 }
 
-// create blank record using headers and open edit modal
 function addNewCustomerRow() {
     if (!customerMaintHeaders.length) {
         deriveCustomerMaintHeaders();
@@ -623,7 +581,6 @@ function addNewCustomerRow() {
     openCustomerEditModal(0);
 }
 
-// use header order to populate modal
 function openCustomerEditModal(idx) {
     currentEditCustomerIndex = idx;
     const cust = customerMaintList[idx];
@@ -673,14 +630,107 @@ function removeCustomer(idx) {
     renderCustomerTable();
 }
 
-function saveCustomerDatabase() {
-    // Placeholder: here you’d push changes back to GitHub or your backend.
-    alert("Customer changes have been staged (demo only).");
+function groupCustomersByRoute() {
+    const byRoute = new Map();
+    customerMaintList
+        .filter(c => !c.__deleted)
+        .forEach(rec => {
+            const route = rec.__routePath || "routes/manual-entry.csv";
+            if (!byRoute.has(route)) byRoute.set(route, []);
+            byRoute.get(route).push(rec);
+        });
+    return byRoute;
 }
 
-/* ============================================================
-   ROUTE CONTROL / EOD / SLIP
-============================================================ */
+function buildCsvForRoute(headers, records) {
+    const safeHeaders = headers.join(",");
+    const lines = [safeHeaders];
+
+    records.forEach(rec => {
+        const row = headers.map(h => {
+            const v = rec[h] != null ? String(rec[h]) : "";
+            if (v.includes('"') || v.includes(',') || v.includes('\n')) {
+                return `"${v.replace(/"/g, '""')}"`;
+            }
+            return v;
+        }).join(",");
+        lines.push(row);
+    });
+
+    return lines.join("\n") + "\n";
+}
+
+async function putFileToGitHub(path, content, message) {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+
+    let sha = null;
+    try {
+        const getRes = await fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/vnd.github+json"
+            }
+        });
+        if (getRes.ok) {
+            const getJson = await getRes.json();
+            sha = getJson.sha;
+        }
+    } catch (e) {
+        console.error("Error fetching SHA for", path, e);
+    }
+
+    const body = {
+        message,
+        content: btoa(unescape(encodeURIComponent(content))),
+        sha: sha || undefined
+    };
+
+    const putRes = await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!putRes.ok) {
+        const err = await putRes.text();
+        throw new Error(`GitHub PUT failed for ${path}: ${putRes.status} ${err}`);
+    }
+
+    return putRes.json();
+}
+
+async function saveCustomerDatabase() {
+    try {
+        if (!customerMaintHeaders.length) {
+            deriveCustomerMaintHeaders();
+        }
+
+        const byRoute = groupCustomersByRoute();
+        const tasks = [];
+
+        byRoute.forEach((records, routePath) => {
+            const csv = buildCsvForRoute(customerMaintHeaders, records);
+            const task = putFileToGitHub(
+                routePath,
+                csv,
+                `Customer maintenance update for ${routePath}`
+            );
+            tasks.push(task);
+        });
+
+        await Promise.all(tasks);
+        alert("Customer changes have been saved to GitHub.");
+
+    } catch (e) {
+        console.error("Error saving customer database", e);
+        alert("Error saving customer changes. Check console for details.");
+    }
+}
+
 function startRoute() {
     alert("Start Route (stub).");
 }
@@ -701,9 +751,6 @@ function emailSlip() {
     html2pdf().from(element).set(opt).save();
 }
 
-/* ============================================================
-   DOM READY
-============================================================ */
 document.addEventListener('DOMContentLoaded', initApp);
 </script>
 
