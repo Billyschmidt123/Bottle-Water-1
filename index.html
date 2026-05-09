@@ -81,7 +81,6 @@
         </div>
     </div>
 </div>
-
 <!-- Modal Definitions -->
 <div id="mgrModal" class="modal-overlay">
     <div class="modal-content">
@@ -129,7 +128,6 @@
         </div>
     </div>
 </div>
-
 <!-- ADDED: Customer Maintenance Modal -->
 <div id="customerMaintModal" class="modal-overlay">
     <div class="modal-content">
@@ -187,7 +185,6 @@
         </div>
     </div>
 </div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map, markers = [];
@@ -320,278 +317,7 @@
         `).join('');
         openModal('productMaintModal');
     }
-
-    // ADDED: Customer Maintenance Functions
-    function openCustomerMaintenance() {
-        renderCustomerTable();
-        openModal('customerMaintModal');
-    }
-
-    function renderCustomerTable() {
-        const body = document.getElementById('customerMaintBody');
-        body.innerHTML = "";
-        globalCustomers.forEach((c, idx) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="text" class="maint-input" value="${c.company}" onchange="updateCustomerField(${idx}, 'company', this.value)"></td>
-                <td><input type="text" class="maint-input" value="${c.address}" onchange="updateCustomerField(${idx}, 'address', this.value)"></td>
-                <td><input type="text" class="maint-input" value="${c.phone}" onchange="updateCustomerField(${idx}, 'phone', this.value)"></td>
-                <td><small>${c.route}</small></td>
-                <td><button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button></td>
-            `;
-            body.appendChild(row);
-        });
-    }
-
-    function updateCustomerField(idx, field, value) {
-        globalCustomers[idx][field] = value;
-    }
-
-    function removeCustomer(idx) {
-        if(confirm("Remove this customer from the temporary list?")) {
-            globalCustomers.splice(idx, 1);
-            renderCustomerTable();
-        }
-    }
-
-    function addNewCustomerRow() {
-        globalCustomers.unshift({ company: "New Customer", address: "Pending", phone: "000-000-0000", route: "Manual Entry" });
-        renderCustomerTable();
-    }
-
-    function saveCustomerDatabase() {
-        alert("Customer data updated locally. Synchronize via GitHub API for permanent storage.");
-        renderManifest(globalCustomers);
-        closeModal('customerMaintModal');
-    }
-
-    function startRoute() { alert("GPS Logging Active"); }
-    function runEndOfDay() { if(confirm("End day?")) location.reload(); }
-
-    // === ADDED: Enhanced Customer Maintenance Using Routes CSV (NON-DESTRUCTIVE OVERRIDES) ===
-
-    // Helper: decode GitHub content
-    async function fetchAndDecodeFile(path) {
-        const res = await fetch(`${REPO_BASE}/${path}`);
-        const json = await res.json();
-        const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-        return { decoded, sha: json.sha };
-    }
-
-    // Load ALL customers from ALL route CSVs into customerMaintList
-    async function loadAllRouteCustomersForMaintenance() {
-        customerMaintList = [];
-        try {
-            const res = await fetch(`${REPO_BASE}/routes`);
-            const contents = await res.json();
-            const files = contents.filter(f => f.name.endsWith('.csv'));
-            for (const file of files) {
-                const { decoded } = await fetchAndDecodeFile(file.path);
-                const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-                if (lines.length < 2) continue;
-                const headers = lines[0].split(',');
-                for (let i = 1; i < lines.length; i++) {
-                    const cols = lines[i].split(',');
-                    if (cols.every(v => v.trim() === "")) continue;
-                    const obj = {};
-                    headers.forEach((h, idx) => {
-                        obj[h.trim()] = cols[idx] !== undefined ? cols[idx] : "";
-                    });
-                    obj.__routePath = file.path;
-                    obj.__rowIndex = i;
-                    obj.__deleted = false;
-                    obj.__new = false;
-                    customerMaintList.push(obj);
-                }
-            }
-        } catch (e) {
-            console.error("Customer Maintenance Load Error", e);
-        }
-    }
-
-    // OVERRIDE: openCustomerMaintenance to load from all route CSVs
-    function openCustomerMaintenance() {
-        loadAllRouteCustomersForMaintenance().then(() => {
-            renderCustomerTable();
-            openModal('customerMaintModal');
-        });
-    }
-
-    // OVERRIDE: renderCustomerTable to use customerMaintList and add Edit button
-    function renderCustomerTable() {
-        const body = document.getElementById('customerMaintBody');
-        const search = (document.getElementById('custSearch') || {}).value || "";
-        body.innerHTML = "";
-        customerMaintList
-            .map((c, idx) => ({ c, idx }))
-            .filter(({ c }) => !c.__deleted)
-            .filter(({ c }) => {
-                if (!search.trim()) return true;
-                const s = search.toLowerCase();
-                const name = (c.Company || c.company || "").toLowerCase();
-                const addr = (c.Address || c.address || "").toLowerCase();
-                return name.includes(s) || addr.includes(s);
-            })
-            .forEach(({ c, idx }) => {
-                const row = document.createElement('tr');
-                const company = c.Company || c.company || c["Customer"] || "";
-                const address = c.Address || c.address || c["Address"] || "";
-                const phone = c.Phone || c.phone || c["Phone"] || "";
-                const route = c.__routePath || c.route || "";
-                row.innerHTML = `
-                    <td><input type="text" class="maint-input" value="${company}" onchange="updateCustomerField(${idx}, 'company', this.value)"></td>
-                    <td><input type="text" class="maint-input" value="${address}" onchange="updateCustomerField(${idx}, 'address', this.value)"></td>
-                    <td><input type="text" class="maint-input" value="${phone}" onchange="updateCustomerField(${idx}, 'phone', this.value)"></td>
-                    <td><small>${route}</small></td>
-                    <td style="display:flex; gap:6px;">
-                        <button class="btn-ui" style="background:#6c757d; padding:5px 10px;" onclick="openCustomerEditModal(${idx})"><i class="fas fa-pen"></i></button>
-                        <button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                body.appendChild(row);
-            });
-    }
-
-    // OVERRIDE: updateCustomerField to map logical fields to header keys
-    function updateCustomerField(idx, field, value) {
-        const c = customerMaintList[idx];
-        if (!c) return;
-        if (field === 'company') {
-            if ('Company' in c) c.Company = value;
-            else if ('company' in c) c.company = value;
-            else c.Company = value;
-        } else if (field === 'address') {
-            if ('Address' in c) c.Address = value;
-            else if ('address' in c) c.address = value;
-            else c.Address = value;
-        } else if (field === 'phone') {
-            if ('Phone' in c) c.Phone = value;
-            else if ('phone' in c) c.phone = value;
-            else c.Phone = value;
-        } else {
-            c[field] = value;
-        }
-    }
-
-    // OVERRIDE: removeCustomer to mark as deleted
-    function removeCustomer(idx) {
-        if (confirm("Remove this customer from the list?")) {
-            if (customerMaintList[idx]) {
-                customerMaintList[idx].__deleted = true;
-            }
-            renderCustomerTable();
-        }
-    }
-
-    // OVERRIDE: addNewCustomerRow to create a new record
-    function addNewCustomerRow() {
-        const obj = {
-            Company: "New Customer",
-            Address: "Pending",
-            Phone: "000-000-0000",
-            __routePath: "routes/manual-entry.csv",
-            __rowIndex: -1,
-            __deleted: false,
-            __new: true
-        };
-        customerMaintList.unshift(obj);
-        renderCustomerTable();
-    }
-
-    // === ADDED: Customer Edit Modal Logic ===
-    function openCustomerEditModal(idx) {
-        currentEditCustomerIndex = idx;
-        const cust = customerMaintList[idx];
-        if (!cust) return;
-        const container = document.getElementById('customerEditForm');
-        container.innerHTML = "";
-        Object.keys(cust)
-            .filter(k => !k.startsWith('__'))
-            .forEach(key => {
-                const row = document.createElement('div');
-                row.className = 'edit-field-row';
-                const safeVal = (cust[key] ?? "").toString().replace(/"/g, '&quot;');
-                row.innerHTML = `
-                    <label>${key}</label>
-                    <input type="text" data-field="${key}" value="${safeVal}">
-                `;
-                container.appendChild(row);
-            });
-        openModal('customerEditModal');
-    }
-
-    function saveCustomerEditModal() {
-        if (currentEditCustomerIndex === null) return;
-        const cust = customerMaintList[currentEditCustomerIndex];
-        if (!cust) return;
-        const inputs = document.querySelectorAll('#customerEditForm input[data-field]');
-        inputs.forEach(inp => {
-            const field = inp.getAttribute('data-field');
-            cust[field] = inp.value;
-        });
-        currentEditCustomerIndex = null;
-        closeModal('customerEditModal');
-        renderCustomerTable();
-    }
-
-    // === ADDED: Save Back to Route CSV Files via GitHub API ===
-    // NOTE: Requires a GitHub token exposed as window.GITHUB_TOKEN at runtime.
-    async function updateRouteFile(path, newContent, sha) {
-        if (!window.GITHUB_TOKEN) {
-            console.warn("GITHUB_TOKEN not set. Generated CSV for", path, ":\n", newContent);
-            return;
-        }
-        const body = {
-            message: `Update customers for ${path}`,
-            content: btoa(unescape(encodeURIComponent(newContent))),
-            sha: sha
-        };
-        await fetch(`${REPO_BASE}/${path}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${window.GITHUB_TOKEN}`
-            },
-            body: JSON.stringify(body)
-        });
-    }
-
-    // OVERRIDE: saveCustomerDatabase to persist changes back to CSV files
-    async function saveCustomerDatabase() {
-        try {
-            // Group by route path
-            const byRoute = {};
-            customerMaintList.forEach(c => {
-                if (!c.__routePath) return;
-                if (!byRoute[c.__routePath]) byRoute[c.__routePath] = [];
-                if (!c.__deleted) byRoute[c.__routePath].push(c);
-            });
-
-            for (const routePath of Object.keys(byRoute)) {
-                const { decoded, sha } = await fetchAndDecodeFile(routePath);
-                const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-                if (lines.length === 0) continue;
-                const headerLine = lines[0];
-                const headers = headerLine.split(',').map(h => h.trim());
-                const rows = byRoute[routePath].map(c => {
-                    return headers.map(h => {
-                        const v = c[h] !== undefined ? c[h] : "";
-                        return (v ?? "").toString().replace(/,/g, ' ');
-                    }).join(',');
-                });
-                const newContent = [headerLine].concat(rows).join('\n');
-                await updateRouteFile(routePath, newContent, sha);
-            }
-
-            alert("Customer data committed. Route CSV files updated (or CSV logged if no token).");
-        } catch (e) {
-            console.error("Customer Save Error", e);
-            alert("Error saving customer data. Check console for details.");
-        }
-        renderCustomerTable();
-        closeModal('customerMaintModal');
-    }
-
+Bottle-Water-1/:64 Uncaught ReferenceError: openModal is not defined
     // === ADDED: FIXES – dynamic headers, working edit/new, loading indicator ===
     let customerMaintHeaders = [];
 
@@ -643,3 +369,89 @@
             deriveCustomerMaintHeaders();
         }
         customerMaintList
+            .map((c, idx) => ({ c, idx }))
+            .filter(({ c }) => !c.__deleted)
+            .filter(({ c }) => {
+                if (!search.trim()) return true;
+                const s = search.toLowerCase();
+                const joined = customerMaintHeaders.map(h => (c[h] || "")).join(" ").toLowerCase();
+                return joined.includes(s);
+            })
+            .forEach(({ c, idx }) => {
+                const row = document.createElement('tr');
+                let cells = "";
+                customerMaintHeaders.forEach(h => {
+                    const val = c[h] !== undefined ? c[h] : "";
+                    const safeVal = String(val).replace(/"/g, '&quot;');
+                    const safeHeader = h.replace(/'/g, "\\'");
+                    cells += `<td><input type="text" class="maint-input" value="${safeVal}" onchange="updateCustomerHeaderField(${idx}, '${safeHeader}', this.value)"></td>`;
+                });
+                row.innerHTML = cells + `
+                    <td style="display:flex; gap:6px;">
+                        <button class="btn-ui" style="background:#6c757d; padding:5px 10px;" onclick="openCustomerEditModal(${idx})"><i class="fas fa-pen"></i></button>
+                        <button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+    }
+
+    // ADDED: header-based field updater used by table inputs
+    function updateCustomerHeaderField(idx, header, value) {
+        if (!customerMaintList[idx]) return;
+        customerMaintList[idx][header] = value;
+    }
+
+    // OVERRIDE: addNewCustomerRow again – create blank record using headers and open edit modal
+    function addNewCustomerRow() {
+        if (!customerMaintHeaders.length) {
+            deriveCustomerMaintHeaders();
+        }
+        const obj = {};
+        customerMaintHeaders.forEach(h => {
+            obj[h] = "";
+        });
+        obj.__routePath = "routes/manual-entry.csv";
+        obj.__rowIndex = -1;
+        obj.__deleted = false;
+        obj.__new = true;
+        customerMaintList.unshift(obj);
+        renderCustomerTable();
+        openCustomerEditModal(0);
+    }
+
+    // OVERRIDE: openCustomerEditModal again – use header order to populate modal
+    function openCustomerEditModal(idx) {
+        currentEditCustomerIndex = idx;
+        const cust = customerMaintList[idx];
+        if (!cust) return;
+        if (!customerMaintHeaders.length) {
+            deriveCustomerMaintHeaders();
+        }
+        const container = document.getElementById('customerEditForm');
+        container.innerHTML = "";
+        customerMaintHeaders.forEach(h => {
+            const val = cust[h] !== undefined ? cust[h] : "";
+            const safeVal = String(val).replace(/"/g, '&quot;');
+            const row = document.createElement('div');
+            row.className = 'edit-field-row';
+            row.innerHTML = `
+                <label>${h}</label>
+                <input type="text" data-field="${h}" value="${safeVal}">
+            `;
+            container.appendChild(row);
+        });
+        openModal('customerEditModal');
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
+
+<!-- === ADDED: Ensure modal functions remain globally accessible === -->
+<script>
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+</script>
+
+</body>
+</html>
