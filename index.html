@@ -34,6 +34,11 @@
         .product-selector-row { display: flex; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; }
         .product-select { flex: 2; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
         .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
+        /* ADDED: Styling for the delete button */
+        .del-btn { color: #dc3545; cursor: pointer; margin-left: 10px; font-size: 1rem; }
+        .del-btn:hover { color: #a71d2a; }
+        /* Hide action column during PDF export */
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
@@ -112,7 +117,8 @@
             </div>
         </div>
         <div id="slipContent" style="padding:20px; flex:1; overflow-y:auto; background:#f0f2f5;">
-            <div class="product-selector-row">
+            <!-- ORIGINAL SELECTORS PRESERVED FOR REFERENCE BUT HIDDEN - PREVIOUS LOGIC USES THESE IDs -->
+            <div class="product-selector-row" style="display:none;">
                 <select id="prodSelect1" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 1 --</option></select>
                 <input type="number" id="prodQty1" class="qty-input" value="1" onchange="syncSlipProducts()">
                 <select id="prodSelect2" class="product-select" onchange="syncSlipProducts()"><option value="">-- Select Product 2 --</option></select>
@@ -135,6 +141,8 @@
 
     let globalProducts = [];
     let appSettings = { showPricing: true, taxLabel: "GST", taxRate: 0.05 };
+    /* ADDED: State to manage appended products for the current stop */
+    let currentStopProducts = [];
 
     async function initApp() {
         map = L.map('map').setView(warehouseCoord, 13);
@@ -145,7 +153,6 @@
         await loadProductList(); 
     }
 
-    /* UPDATED: Loading specifically from Products/Water.csv and Products/Coffee.csv */
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
@@ -234,6 +241,8 @@
                 map.flyTo([lat, lng], 15);
                 document.getElementById('activeAddress').innerText = stop.address;
                 document.getElementById('activePhone').innerText = stop.phone;
+                /* ADDED: Reset appended products when opening a new stop */
+                currentStopProducts = []; 
                 openStopSlip(stop);
             };
             stopList.appendChild(card);
@@ -253,6 +262,26 @@
         if (stop) openStopSlip(stop);
     }
 
+    /* ADDED: Function to append product to the list */
+    function addProductToList(idx) {
+        if (idx === "") return;
+        const product = globalProducts[idx];
+        currentStopProducts.push({ ...product, qty: 1 });
+        syncSlipProducts();
+    }
+
+    /* ADDED: Function to update quantity in the list */
+    function updateListQty(index, qty) {
+        currentStopProducts[index].qty = parseInt(qty) || 0;
+        syncSlipProducts();
+    }
+
+    /* ADDED: Function to remove product from the list */
+    function removeProductFromList(index) {
+        currentStopProducts.splice(index, 1);
+        syncSlipProducts();
+    }
+
     function openStopSlip(stop) {
         window.currentActiveStop = stop; 
         const preview = document.getElementById('slipPreview');
@@ -261,25 +290,24 @@
         
         let rowsHtml = "";
         let subtotal = 0;
-        const sel1Idx = document.getElementById('prodSelect1').value;
-        const qty1 = parseInt(document.getElementById('prodQty1').value) || 0;
-        const sel2Idx = document.getElementById('prodSelect2').value;
-        const qty2 = parseInt(document.getElementById('prodQty2').value) || 0;
 
-        const activeProds = [];
-        if(sel1Idx !== "") activeProds.push({item: globalProducts[sel1Idx], qty: qty1});
-        if(sel2Idx !== "") activeProds.push({item: globalProducts[sel2Idx], qty: qty2});
-
-        activeProds.forEach(p => {
-            const lineTotal = p.item.price * p.qty;
+        /* ADDED: Generate rows from the dynamic currentStopProducts list */
+        currentStopProducts.forEach((p, index) => {
+            const lineTotal = p.price * p.qty;
             subtotal += lineTotal;
             rowsHtml += `<tr>
-                <td>${p.qty}</td>
-                <td>${p.item.name} ${p.item.size}</td>
-                <td>${appSettings.showPricing ? '$' + p.item.price.toFixed(2) : '--'}</td>
-                <td>${appSettings.showPricing ? '$' + lineTotal.toFixed(2) : '--'}</td>
+                <td><input type="number" class="qty-input no-print" value="${p.qty}" onchange="updateListQty(${index}, this.value)"><span class="only-print">${p.qty}</span></td>
+                <td>${p.name} ${p.size}</td>
+                <td>${appSettings.showPricing ? '$' + p.price.toFixed(2) : '--'}</td>
+                <td>
+                    ${appSettings.showPricing ? '$' + lineTotal.toFixed(2) : '--'}
+                    <i class="fas fa-times del-btn no-print" onclick="removeProductFromList(${index})"></i>
+                </td>
             </tr>`;
         });
+
+        /* ADDED: Generate product options for the in-slip dropdown */
+        const productOptions = globalProducts.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
 
         preview.innerHTML = `
             <div class="culligan-slip">
@@ -302,10 +330,19 @@
                         <p><strong>COMPANY:</strong> ${stop.company}<br>${stop.address}</p>
                     </div>
                 </div>
+
+                <!-- ADDED: Product Dropdown directly above the table -->
+                <div class="no-print" style="margin-top: 20px;">
+                    <select class="product-select" style="width: 100%;" onchange="addProductToList(this.value)">
+                        <option value="">-- Click to Add Product --</option>
+                        ${productOptions}
+                    </select>
+                </div>
+
                 <table class="c-table">
                     <thead><tr style="background:#eee;"><th>QTY.</th><th>DESCRIPTION</th><th>EACH</th><th>TOTAL</th></tr></thead>
                     <tbody>
-                        ${rowsHtml || '<tr><td colspan="4" style="text-align:center; padding:20px;">No Products Selected</td></tr>'}
+                        ${rowsHtml || '<tr><td colspan="4" style="text-align:center; padding:20px;">No Products Added</td></tr>'}
                     </tbody>
                     <tfoot>
                         <tr>
