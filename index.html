@@ -43,17 +43,53 @@
         .edit-field-row label { display:block; font-size:0.85rem; margin-bottom:3px; color:#4a5568; }
         .edit-field-row input { width:100%; padding:6px 8px; border:1px solid #cbd5e0; border-radius:4px; font-size:0.9rem; }
 
-        /* === ADDED: Loading overlay + progress bar for customer maintenance === */
-        #customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
-        .progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
-        .progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
-        @keyframes loadingPulse {
-            from { transform: translateX(0); opacity:0.6; }
-            to { transform: translateX(150%); opacity:1; }
-        }
-    </style>
+/* === ADDED: Loading overlay + progress bar for customer maintenance === */
+#customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
+.progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
+.progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
+
+@keyframes loadingPulse {
+    from { transform: translateX(0); opacity:0.6; }
+    to { transform: translateX(150%); opacity:1; }
+}
+</style>
 </head>
 <body>
+
+<!-- === CUSTOMER MAINTENANCE LOADING OVERLAY === -->
+<div id="customerMaintLoadingOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <div style="padding:20px;">
+            <h3 style="margin-top:0;">Loading customer list</h3>
+            <p>Please wait while route files are scanned...</p>
+
+            <!-- REAL‑TIME % LABEL -->
+            <p id="customerMaintProgressLabel" style="margin-top:10px; font-weight:bold;">Scanning 0%</p>
+
+            <div class="progress-bar">
+                <div class="progress-inner"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* === ADDED: REAL‑TIME SCAN PROGRESS === */
+
+let totalRouteFiles = 0;
+let scannedRouteFiles = 0;
+
+function updateCustomerScanProgress() {
+    const pct = totalRouteFiles === 0 ? 0 : Math.floor((scannedRouteFiles / totalRouteFiles) * 100);
+
+    const bar = document.querySelector('#customerMaintLoadingOverlay .progress-inner');
+    const label = document.getElementById('customerMaintProgressLabel');
+
+    if (bar) bar.style.width = pct + "%";
+    if (label) label.innerText = `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
+}
+</script>
+
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
