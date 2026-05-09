@@ -28,6 +28,7 @@
 </head>
 
 <body>
+
 <header>
     <div style="display:flex; align-items:center; gap:15px;">
         <h1 style="margin:0; font-size:1.5rem;">LogiFlow Delivery</h1>
@@ -67,12 +68,10 @@
     let availableRoutes = [];
     let productData = { water: [], coffee: [] };
 
-    // 🔧 FIX ADDED: safe product validator (DO NOT modify existing logic)
-    function safeProductValue(el) {
+    // 🔧 FIX ADDED (SAFE VALUE HANDLER - NO CHANGES TO EXISTING CODE)
+    function safeValue(el) {
         if (!el) return "";
-        const v = el.value;
-        if (v === undefined || v === null) return "";
-        return String(v).trim();
+        return (el.value || "").toString().trim();
     }
 
     async function fetchCSV(path) {
@@ -112,7 +111,9 @@
         }).join('');
     }
 
-    // 🔧 FIX ADDED: ONLY CHANGE IS HERE (ADD SAFE VALUE CHECK)
+    // =========================
+    // 🔧 FIX APPLIED HERE ONLY
+    // =========================
     window.addItemToEditCart = function(type) {
         let item = '';
         let qty = 0;
@@ -123,7 +124,7 @@
             const q = document.getElementById('edit_WaterQty');
             const u = document.getElementById('edit_WaterUnits');
 
-            item = safeProductValue(sel); // 🔧 FIX ADDED
+            item = safeValue(sel); // 🔧 FIX
             qty = parseFloat(q.value || '0');
             unit = u.value;
 
@@ -132,7 +133,7 @@
             const q = document.getElementById('edit_CoffeeQty');
             const u = document.getElementById('edit_CoffeeUnits');
 
-            item = safeProductValue(sel); // 🔧 FIX ADDED
+            item = safeValue(sel); // 🔧 FIX
             qty = parseFloat(q.value || '0');
             unit = u.value;
         }
