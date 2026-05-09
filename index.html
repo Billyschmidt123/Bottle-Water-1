@@ -36,9 +36,7 @@
         .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
         .del-btn { color: #dc3545; cursor: pointer; margin-left: 10px; font-size: 1rem; }
         .del-btn:hover { color: #a71d2a; }
-        /* Unit selector styling */
         .unit-select { padding: 2px; font-size: 0.75rem; border-radius: 3px; border: 1px solid #ccc; }
-        /* Maintenance specific styling */
         .maint-input { width: 90%; padding: 5px; border: 1px solid #ddd; }
         .deactivated { opacity: 0.5; background: #f9f9f9; }
         @media print { .no-print { display: none !important; } .only-print { display: inline !important; } }
@@ -86,8 +84,10 @@
         </div>
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px; background: #eef2f7; border-radius: 8px;">
-                <!-- Updated Button for Product Maintenance -->
-                <button class="btn-ui" style="background:#007bff;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
+                <!-- RESTORED: Customer Maintenance Button -->
+                <button class="btn-ui" style="background:#007bff;" onclick="alert('Customer Maintenance Mode Active')"><i class="fas fa-users-cog"></i> Customer Maintenance</button>
+                <!-- ADDED: Separate Product Maintenance Button -->
+                <button class="btn-ui" style="background:#6610f2;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
                 <button class="btn-ui" style="background:#f39c12;" onclick="runEndOfDay()"><i class="fas fa-calendar-check"></i> End of Day</button>
                 <button class="btn-ui" style="background:#28a745;" onclick="alert('Manual Entry Mode Active')"><i class="fas fa-phone"></i> Call-In Order</button>
                 <button class="btn-ui" style="background:#444;" onclick="downloadBackup()"><i class="fas fa-database"></i> Backup</button>
@@ -133,7 +133,7 @@
     </div>
 </div>
 
-<!-- NEW MODAL FOR PRODUCT MAINTENANCE -->
+<!-- START NEW ADDITION: PRODUCT MAINTENANCE MODAL -->
 <div id="productMaintModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 98%;">
         <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -164,6 +164,7 @@
         </div>
     </div>
 </div>
+<!-- END NEW ADDITION: PRODUCT MAINTENANCE MODAL -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -191,7 +192,6 @@
     async function loadProductList() {
         const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
         try {
-            // Preservation of original globalProducts array clearing if needed
             globalProducts = []; 
             for (const path of productFiles) {
                 const res = await fetch(`${REPO_BASE}/${path}`);
@@ -199,7 +199,6 @@
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const lines = decoded.split(/\r?\n/).filter(l => l.trim() !== '');
                 
-                /* ADDED: Header detection for unit types */
                 const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
                 const unitMap = {
                     'case': headers.indexOf('case'),
@@ -215,7 +214,6 @@
                 lines.slice(1).forEach(line => {
                     const p = line.split(',');
                     if(p[0]) {
-                        /* ADDED: Logic to see which units are available based on header presence and row value */
                         let availableUnits = [];
                         if (unitMap.case !== -1 && p[unitMap.case]) availableUnits.push({label: 'Case', price: parseFloat(p[unitMap.price_case]) || 0});
                         if (unitMap.box !== -1 && p[unitMap.box]) availableUnits.push({label: 'Box', price: parseFloat(p[unitMap.price_box]) || 0});
@@ -228,7 +226,7 @@
                             price: parseFloat(p[2]) || 0,
                             units: availableUnits,
                             source: path,
-                            active: true // Default status
+                            active: true 
                         });
                     }
                 });
@@ -240,7 +238,6 @@
     function populateDropdowns() {
         const d1 = document.getElementById('prodSelect1');
         const d2 = document.getElementById('prodSelect2');
-        // FILTER: Only show active products in the delivery dropdowns
         const activeProds = globalProducts.filter(p => p.active !== false);
         const options = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
         d1.innerHTML = '<option value="">-- Select Product 1 --</option>' + options;
@@ -332,7 +329,6 @@
 
     function addProductToList(idx) {
         if (idx === "") return;
-        // Adjusted to use globalProducts filter indices correctly
         const activeProds = globalProducts.filter(p => p.active !== false);
         const product = activeProds[idx];
         const initialPrice = product.units.length > 0 ? product.units[0].price : product.price;
@@ -404,7 +400,6 @@
             </tr>`;
         });
 
-        // Filter active products for dropdown
         const activeProds = globalProducts.filter(p => p.active !== false);
         const productOptions = activeProds.map((p, i) => `<option value="${i}">${p.name} (${p.size})</option>`).join('');
 
@@ -492,10 +487,7 @@
     function clearSignature() { if (sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
     function emailSlip() { html2pdf().from(document.getElementById('slipPreview')).save('Delivery_Slip.pdf'); }
 
-    /* ========================================== */
-    /* ADDED: PRODUCT MAINTENANCE CRUD LOGIC      */
-    /* ========================================== */
-
+    /* START NEW ADDITION: PRODUCT MAINTENANCE LOGIC */
     function openProductMaintenance() {
         renderProductMaintenanceTable();
         openModal('productMaintModal');
@@ -504,14 +496,10 @@
     function renderProductMaintenanceTable() {
         const body = document.getElementById('productMaintBody');
         body.innerHTML = "";
-        
         globalProducts.forEach((p, idx) => {
             const row = document.createElement('tr');
             if (p.active === false) row.classList.add('deactivated');
-            
-            // Extraction of unit prices for easy editing
             const getPrice = (label) => p.units.find(u => u.label.toLowerCase() === label.toLowerCase())?.price || 0;
-
             row.innerHTML = `
                 <td><select class="maint-input" onchange="updateMaintField(${idx}, 'source', this.value)">
                     <option value="Products/Water.csv" ${p.source === 'Products/Water.csv' ? 'selected' : ''}>Water</option>
@@ -524,55 +512,21 @@
                 <td><input type="number" class="maint-input" value="${getPrice('Box')}" onchange="updateMaintUnitPrice(${idx}, 'Box', this.value)"></td>
                 <td><input type="number" class="maint-input" value="${getPrice('Sleeve')}" onchange="updateMaintUnitPrice(${idx}, 'Sleeve', this.value)"></td>
                 <td><strong>${p.active !== false ? 'ACTIVE' : 'INACTIVE'}</strong></td>
-                <td>
-                    <button class="btn-ui" style="background:${p.active !== false ? '#dc3545' : '#28a745'}; padding: 5px 10px;" onclick="toggleProductStatus(${idx})">
-                        ${p.active !== false ? 'Deactivate' : 'Reactivate'}
-                    </button>
-                </td>
-            `;
+                <td><button class="btn-ui" style="background:${p.active !== false ? '#dc3545' : '#28a745'}; padding: 5px 10px;" onclick="toggleProductStatus(${idx})">${p.active !== false ? 'Deactivate' : 'Reactivate'}</button></td>`;
             body.appendChild(row);
         });
     }
 
-    function updateMaintField(idx, field, value) {
-        if (field === 'price') value = parseFloat(value);
-        globalProducts[idx][field] = value;
-    }
-
+    function updateMaintField(idx, field, value) { if (field === 'price') value = parseFloat(value); globalProducts[idx][field] = value; }
     function updateMaintUnitPrice(idx, label, value) {
         const val = parseFloat(value);
         const unitIdx = globalProducts[idx].units.findIndex(u => u.label === label);
-        if (unitIdx > -1) {
-            globalProducts[idx].units[unitIdx].price = val;
-        } else if (val > 0) {
-            globalProducts[idx].units.push({ label: label, price: val });
-        }
+        if (unitIdx > -1) { globalProducts[idx].units[unitIdx].price = val; } else if (val > 0) { globalProducts[idx].units.push({ label: label, price: val }); }
     }
-
-    function toggleProductStatus(idx) {
-        globalProducts[idx].active = globalProducts[idx].active !== false ? false : true;
-        renderProductMaintenanceTable();
-        populateDropdowns();
-    }
-
-    function addNewProductRow() {
-        globalProducts.push({
-            name: "New Product",
-            size: "000ml",
-            price: 0,
-            units: [],
-            source: "Products/Water.csv",
-            active: true
-        });
-        renderProductMaintenanceTable();
-    }
-
-    function saveAllProducts() {
-        // Logic to finalize data structure. In a full system, this would trigger GitHub API Writes.
-        alert("Product database updated locally. To persist permanently, ensure CSV files are synchronized via server-side update.");
-        populateDropdowns();
-        closeModal('productMaintModal');
-    }
+    function toggleProductStatus(idx) { globalProducts[idx].active = globalProducts[idx].active !== false ? false : true; renderProductMaintenanceTable(); populateDropdowns(); }
+    function addNewProductRow() { globalProducts.push({ name: "New Product", size: "000ml", price: 0, units: [], source: "Products/Water.csv", active: true }); renderProductMaintenanceTable(); }
+    function saveAllProducts() { alert("Database updated locally."); populateDropdowns(); closeModal('productMaintModal'); }
+    /* END NEW ADDITION: PRODUCT MAINTENANCE LOGIC */
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
