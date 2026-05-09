@@ -43,53 +43,17 @@
         .edit-field-row label { display:block; font-size:0.85rem; margin-bottom:3px; color:#4a5568; }
         .edit-field-row input { width:100%; padding:6px 8px; border:1px solid #cbd5e0; border-radius:4px; font-size:0.9rem; }
 
-/* === ADDED: Loading overlay + progress bar for customer maintenance === */
-#customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
-.progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
-.progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
-
-@keyframes loadingPulse {
-    from { transform: translateX(0); opacity:0.6; }
-    to { transform: translateX(150%); opacity:1; }
-}
-</style>
+        /* === ADDED: Loading overlay + progress bar for customer maintenance === */
+        #customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
+        .progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
+        .progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
+        @keyframes loadingPulse {
+            from { transform: translateX(0); opacity:0.6; }
+            to { transform: translateX(150%); opacity:1; }
+        }
+    </style>
 </head>
 <body>
-
-<!-- === CUSTOMER MAINTENANCE LOADING OVERLAY === -->
-<div id="customerMaintLoadingOverlay" class="modal-overlay">
-    <div class="modal-content">
-        <div style="padding:20px;">
-            <h3 style="margin-top:0;">Loading customer list</h3>
-            <p>Please wait while route files are scanned...</p>
-
-            <!-- REAL‑TIME % LABEL -->
-            <p id="customerMaintProgressLabel" style="margin-top:10px; font-weight:bold;">Scanning 0%</p>
-
-            <div class="progress-bar">
-                <div class="progress-inner"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-/* === ADDED: REAL‑TIME SCAN PROGRESS === */
-
-let totalRouteFiles = 0;
-let scannedRouteFiles = 0;
-
-function updateCustomerScanProgress() {
-    const pct = totalRouteFiles === 0 ? 0 : Math.floor((scannedRouteFiles / totalRouteFiles) * 100);
-
-    const bar = document.querySelector('#customerMaintLoadingOverlay .progress-inner');
-    const label = document.getElementById('customerMaintProgressLabel');
-
-    if (bar) bar.style.width = pct + "%";
-    if (label) label.innerText = `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
-}
-</script>
-
 
 <header>
     <div style="display:flex; align-items:center; gap:20px;">
@@ -117,6 +81,7 @@ function updateCustomerScanProgress() {
         </div>
     </div>
 </div>
+
 <!-- Modal Definitions -->
 <div id="mgrModal" class="modal-overlay">
     <div class="modal-content">
@@ -164,6 +129,7 @@ function updateCustomerScanProgress() {
         </div>
     </div>
 </div>
+
 <!-- ADDED: Customer Maintenance Modal -->
 <div id="customerMaintModal" class="modal-overlay">
     <div class="modal-content">
@@ -215,12 +181,14 @@ function updateCustomerScanProgress() {
         <div style="padding:20px;">
             <h3 style="margin-top:0;">Loading customer list</h3>
             <p>Please wait while route files are scanned...</p>
+            <p id="customerMaintProgressLabel" style="margin-top:10px; font-weight:bold;">Scanning 0%</p>
             <div class="progress-bar">
                 <div class="progress-inner"></div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map, markers = [];
@@ -236,6 +204,18 @@ function updateCustomerScanProgress() {
     // === ADDED: Customer Maintenance Data Stores ===
     let customerMaintList = [];
     let currentEditCustomerIndex = null;
+
+    // === ADDED: Scan progress state for customer maintenance ===
+    let totalRouteFiles = 0;
+    let scannedRouteFiles = 0;
+
+    function updateCustomerScanProgress() {
+        const pct = totalRouteFiles === 0 ? 0 : Math.floor((scannedRouteFiles / totalRouteFiles) * 100);
+        const bar = document.querySelector('#customerMaintLoadingOverlay .progress-inner');
+        const label = document.getElementById('customerMaintProgressLabel');
+        if (bar) bar.style.width = pct + "%";
+        if (label) label.innerText = `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
+    }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -254,6 +234,10 @@ function updateCustomerScanProgress() {
             for (const path of productFiles) {
                 const res = await fetch(`${REPO_BASE}/${path}`);
                 const json = await res.json();
+                if (!json || !json.content) {
+                    console.error("Product API error", json);
+                    continue;
+                }
                 const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
                 lines.slice(1).forEach(line => {
@@ -269,6 +253,11 @@ function updateCustomerScanProgress() {
         try {
             const res = await fetch(`${REPO_BASE}/routes`);
             const contents = await res.json();
+            if (!Array.isArray(contents)) {
+                console.error("Route Load API error", contents);
+                dropdown.innerHTML = '<option value="">-- Select Route --</option>';
+                return;
+            }
             const files = contents.filter(f => f.name.endsWith('.csv'));
             dropdown.innerHTML = '<option value="">-- Select Route --</option>' + 
                 files.map(f => `<option value="${f.path}">${f.name.replace('.csv', '')}</option>`).join('');
@@ -283,6 +272,10 @@ function updateCustomerScanProgress() {
         try {
             const res = await fetch(`${REPO_BASE}/${path}`);
             const json = await res.json();
+            if (!json || !json.content) {
+                console.error("Route CSV API error", json);
+                return;
+            }
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
             
@@ -353,6 +346,7 @@ function updateCustomerScanProgress() {
         `).join('');
         openModal('productMaintModal');
     }
+
     // === ADDED: FIXES – dynamic headers, working edit/new, loading indicator ===
     let customerMaintHeaders = [];
 
@@ -377,6 +371,63 @@ function updateCustomerScanProgress() {
         });
         html += `<th>Actions</th>`;
         theadRow.innerHTML = html;
+    }
+
+    // === ADDED: Load all route customers for maintenance with scan progress ===
+    async function loadAllRouteCustomersForMaintenance() {
+        customerMaintList = [];
+        try {
+            const res = await fetch(`${REPO_BASE}/routes`);
+            const contents = await res.json();
+            if (!Array.isArray(contents)) {
+                console.error("Customer Maint Route API error", contents);
+                totalRouteFiles = 0;
+                scannedRouteFiles = 0;
+                updateCustomerScanProgress();
+                return;
+            }
+            const files = contents.filter(f => f.name.endsWith('.csv'));
+            totalRouteFiles = files.length;
+            scannedRouteFiles = 0;
+            updateCustomerScanProgress();
+
+            for (const file of files) {
+                try {
+                    const r = await fetch(`${REPO_BASE}/${file.path}`);
+                    const json = await r.json();
+                    if (!json || !json.content) {
+                        console.error("Customer Maint CSV API error", file.path, json);
+                        scannedRouteFiles++;
+                        updateCustomerScanProgress();
+                        continue;
+                    }
+                    const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                    const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
+                    lines.slice(1).forEach((line, idx) => {
+                        const p = line.split(',');
+                        const rec = {
+                            "Company/Name": p[3] || p[0] || "",
+                            "Address": p[4] || p[1] || "",
+                            "Phone": p[2] || "",
+                            "Route Assoc.": file.name.replace('.csv', ''),
+                            __routePath: file.path,
+                            __rowIndex: idx + 1,
+                            __deleted: false
+                        };
+                        customerMaintList.push(rec);
+                    });
+                } catch (innerErr) {
+                    console.error("Customer Maint CSV load error", file.path, innerErr);
+                }
+                scannedRouteFiles++;
+                updateCustomerScanProgress();
+            }
+        } catch (e) {
+            console.error("Customer Maint master load error", e);
+            totalRouteFiles = 0;
+            scannedRouteFiles = 0;
+            updateCustomerScanProgress();
+        }
     }
 
     // OVERRIDE: openCustomerMaintenance again to include loading + headers
@@ -478,6 +529,9 @@ function updateCustomerScanProgress() {
         });
         openModal('customerEditModal');
     }
+
+    // NOTE: saveCustomerDatabase, saveCustomerEditModal, removeCustomer, startRoute, runEndOfDay
+    // are assumed to exist elsewhere in your original file or to be added later.
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
