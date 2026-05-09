@@ -76,8 +76,11 @@
             <button onclick="closeModal('mgrModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
         <div style="padding:20px;">
-            <button class="btn-ui" style="background:#007bff;" onclick="openProductMaintenance()">Product Maintenance</button>
-            <table class="mgmt-table" style="margin-top:20px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="btn-ui" style="background:#007bff;" onclick="openProductMaintenance()"><i class="fas fa-boxes"></i> Product Maintenance</button>
+                <button class="btn-ui" style="background:#28a745;" onclick="openCustomerMaintenance()"><i class="fas fa-users"></i> Customer Maintenance</button>
+            </div>
+            <table class="mgmt-table">
                 <thead><tr><th>Route Name</th><th>Path</th></tr></thead>
                 <tbody id="mgrTableBody"></tbody>
             </table>
@@ -113,6 +116,37 @@
     </div>
 </div>
 
+<!-- ADDED: Customer Maintenance Modal -->
+<div id="customerMaintModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="background:#155724; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
+            <h3><i class="fas fa-user-edit"></i> Customer Maintenance</h3>
+            <button onclick="closeModal('customerMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:20px; flex:1; overflow-y:auto;">
+            <div style="margin-bottom:15px; display:flex; gap:10px;">
+                <input type="text" id="custSearch" placeholder="Search customer name or address..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                <button class="btn-ui" style="background:#28a745;" onclick="addNewCustomerRow()"><i class="fas fa-user-plus"></i> New Customer</button>
+            </div>
+            <table class="mgmt-table">
+                <thead>
+                    <tr>
+                        <th>Company/Name</th>
+                        <th>Address</th>
+                        <th>Phone</th>
+                        <th>Route Assoc.</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customerMaintBody"></tbody>
+            </table>
+        </div>
+        <div style="padding:15px; background:#f8fafc; border-top:1px solid #eee; text-align:right;">
+            <button class="btn-ui" style="background:#007bff;" onclick="saveCustomerDatabase()"><i class="fas fa-save"></i> Commit Changes</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     let map, markers = [];
@@ -123,6 +157,7 @@
     
     let globalProducts = [];
     let currentStopProducts = [];
+    let globalCustomers = []; // ADDED: Global store for customer data
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -172,10 +207,14 @@
             const json = await res.json();
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-            renderManifest(lines.slice(1).map(l => {
+            
+            // ADDED: Populate globalCustomers from the currently loaded route
+            globalCustomers = lines.slice(1).map(l => {
                 const p = l.split(',');
-                return { company: p[3] || p[0], address: p[4] || p[1], phone: p[2] };
-            }));
+                return { company: p[3] || p[0], address: p[4] || p[1], phone: p[2], route: path };
+            });
+
+            renderManifest(globalCustomers);
         } catch (e) { console.error("CSV Parse Error", e); }
     }
 
@@ -227,6 +266,50 @@
             <tr><td>${p.name}</td><td>${p.size}</td><td>$${p.price.toFixed(2)}</td><td>Active</td></tr>
         `).join('');
         openModal('productMaintModal');
+    }
+
+    // ADDED: Customer Maintenance Functions
+    function openCustomerMaintenance() {
+        renderCustomerTable();
+        openModal('customerMaintModal');
+    }
+
+    function renderCustomerTable() {
+        const body = document.getElementById('customerMaintBody');
+        body.innerHTML = "";
+        globalCustomers.forEach((c, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="maint-input" value="${c.company}" onchange="updateCustomerField(${idx}, 'company', this.value)"></td>
+                <td><input type="text" class="maint-input" value="${c.address}" onchange="updateCustomerField(${idx}, 'address', this.value)"></td>
+                <td><input type="text" class="maint-input" value="${c.phone}" onchange="updateCustomerField(${idx}, 'phone', this.value)"></td>
+                <td><small>${c.route}</small></td>
+                <td><button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button></td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    function updateCustomerField(idx, field, value) {
+        globalCustomers[idx][field] = value;
+    }
+
+    function removeCustomer(idx) {
+        if(confirm("Remove this customer from the temporary list?")) {
+            globalCustomers.splice(idx, 1);
+            renderCustomerTable();
+        }
+    }
+
+    function addNewCustomerRow() {
+        globalCustomers.unshift({ company: "New Customer", address: "Pending", phone: "000-000-0000", route: "Manual Entry" });
+        renderCustomerTable();
+    }
+
+    function saveCustomerDatabase() {
+        alert("Customer data updated locally. Synchronize via GitHub API for permanent storage.");
+        renderManifest(globalCustomers);
+        closeModal('customerMaintModal');
     }
 
     function startRoute() { alert("GPS Logging Active"); }
