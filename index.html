@@ -11,7 +11,7 @@
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; overflow: hidden; }
-        header { background: #004a99; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1100; }
+        header { background: #004a99; color: white; padding: 10px 25px; display: flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1100; }
         .nav-controls { background: #e9ecef; padding: 12px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #ccc; }
         .info-pill { background: white; border: 1px solid #cbd5e0; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; color: #2d3748; flex-grow: 1; min-height: 20px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
         .main-view { display: flex; flex: 1; height: calc(100vh - 120px); }
@@ -660,14 +660,18 @@ function buildCsvForRoute(headers, records) {
     return lines.join("\n") + "\n";
 }
 
+// *** FIX SCOPE: use safe auth token resolution without touching hidden PAT definition ***
 async function putFileToGitHub(path, content, message) {
     const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+
+    // Safely resolve auth token from either local 'token' (if defined) or global window.token
+    const authToken = (typeof token !== "undefined") ? token : window.token;
 
     let sha = null;
     try {
         const getRes = await fetch(url, {
             headers: {
-                "Authorization": `Bearer ${token}`,
+                "Authorization": `Bearer ${authToken}`,
                 "Accept": "application/vnd.github+json"
             }
         });
@@ -688,7 +692,7 @@ async function putFileToGitHub(path, content, message) {
     const putRes = await fetch(url, {
         method: "PUT",
         headers: {
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${authToken}`,
             "Accept": "application/vnd.github+json",
             "Content-Type": "application/json"
         },
