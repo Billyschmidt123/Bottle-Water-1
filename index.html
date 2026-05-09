@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; overflow: hidden; }
         header { background: #004a99; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1100; }
@@ -25,25 +26,19 @@
         .mgmt-table { width: 100%; border-collapse: collapse; background: white; }
         .mgmt-table th { background: #edf2f7; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e0; position: sticky; top: 0; }
         .mgmt-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+
+        /* Slip */
         #slipPreview { padding: 40px; background: white; color: black; min-height: 800px; }
         .culligan-slip { font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; max-width: 800px; margin: auto; background: #fff; }
         .c-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .c-table th, .c-table td { border: 1px solid #000; padding: 5px; font-size: 0.85rem; }
-        .sig-canvas { border: 1px solid #000; background: #fafafa; width: 100%; height: 150px; cursor: crosshair; }
-        .red-text { color: #d00; font-weight: bold; }
-        .qty-input { width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
-        .del-btn { color: #dc3545; cursor: pointer; margin-left: 10px; font-size: 1rem; }
-        .maint-input { width: 90%; padding: 5px; border: 1px solid #ddd; }
-        .deactivated { opacity: 0.5; background: #f9f9f9; }
-        @media print { .no-print { display: none !important; } .only-print { display: inline !important; } }
-        .only-print { display: none; }
 
-        /* === ADDED: Customer Edit Modal Styling (minimal) === */
+        /* Customer Edit Modal */
         .edit-field-row { margin-bottom: 10px; }
         .edit-field-row label { display:block; font-size:0.85rem; margin-bottom:3px; color:#4a5568; }
         .edit-field-row input { width:100%; padding:6px 8px; border:1px solid #cbd5e0; border-radius:4px; font-size:0.9rem; }
 
-        /* === ADDED: Loading overlay + progress bar for customer maintenance === */
+        /* Loading overlay */
         #customerMaintLoadingOverlay .modal-content { max-width: 400px; height: auto; }
         .progress-bar { width: 100%; height: 8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-top:10px; }
         .progress-inner { width: 40%; height:100%; background:#3182ce; animation: loadingPulse 1s infinite alternate; }
@@ -53,6 +48,7 @@
         }
     </style>
 </head>
+
 <body>
 
 <header>
@@ -82,7 +78,7 @@
     </div>
 </div>
 
-<!-- Modal Definitions -->
+<!-- Manager Modal -->
 <div id="mgrModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#004a99; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -102,6 +98,7 @@
     </div>
 </div>
 
+<!-- Stop Slip Modal -->
 <div id="stopModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#28a745; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -115,6 +112,7 @@
     </div>
 </div>
 
+<!-- Product Maintenance Modal -->
 <div id="productMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#343a40; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
@@ -130,484 +128,166 @@
     </div>
 </div>
 
-<!-- ADDED: Customer Maintenance Modal -->
+<!-- Customer Maintenance Modal -->
 <div id="customerMaintModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#155724; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3><i class="fas fa-user-edit"></i> Customer Maintenance</h3>
             <button onclick="closeModal('customerMaintModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
+
         <div style="padding:20px; flex:1; overflow-y:auto;">
             <div style="margin-bottom:15px; display:flex; gap:10px;">
                 <input type="text" id="custSearch" placeholder="Search customer name or address..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
                 <button class="btn-ui" style="background:#28a745;" onclick="addNewCustomerRow()"><i class="fas fa-user-plus"></i> New Customer</button>
             </div>
+
             <table class="mgmt-table">
-                <thead>
-                    <tr>
-                        <th>Company/Name</th>
-                        <th>Address</th>
-                        <th>Phone</th>
-                        <th>Route Assoc.</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Loading…</th></tr></thead>
                 <tbody id="customerMaintBody"></tbody>
             </table>
         </div>
+
         <div style="padding:15px; background:#f8fafc; border-top:1px solid #eee; text-align:right;">
             <button class="btn-ui" style="background:#007bff;" onclick="saveCustomerDatabase()"><i class="fas fa-save"></i> Commit Changes</button>
         </div>
     </div>
 </div>
 
-<!-- === ADDED: Customer Edit Modal === -->
+<!-- Customer Edit Modal -->
 <div id="customerEditModal" class="modal-overlay">
     <div class="modal-content">
         <div style="background:#1f2933; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center;">
             <h3><i class="fas fa-user-cog"></i> Edit Customer</h3>
             <button onclick="closeModal('customerEditModal')" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">&times;</button>
         </div>
+
         <div style="padding:20px; flex:1; overflow-y:auto;" id="customerEditForm"></div>
+
         <div style="padding:15px; background:#f8fafc; border-top:1px solid #eee; text-align:right;">
             <button class="btn-ui" style="background:#28a745;" onclick="saveCustomerEditModal()"><i class="fas fa-check"></i> Save</button>
         </div>
     </div>
 </div>
 
-<!-- === ADDED: Loading overlay for customer maintenance === -->
+<!-- Loading Overlay -->
 <div id="customerMaintLoadingOverlay" class="modal-overlay">
     <div class="modal-content">
         <div style="padding:20px;">
             <h3 style="margin-top:0;">Loading customer list</h3>
-            <p>Please wait while route files are scanned...</p>
+            <p>Please wait while route files are scanned…</p>
             <p id="customerMaintProgressLabel" style="margin-top:10px; font-weight:bold;">Scanning 0%</p>
-            <div class="progress-bar">
-                <div class="progress-inner"></div>
-            </div>
+            <div class="progress-bar"><div class="progress-inner"></div></div>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    let map, markers = [];
-    const warehouseCoord = [55.1707, -118.7947];
-    const REPO_OWNER = "Billyschmidt123";
-    const REPO_NAME = "Bottle-Water-1";
-    const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
-    
-    let globalProducts = [];
-    let currentStopProducts = [];
-    let globalCustomers = []; // ADDED: Global store for customer data
+/* ============================================================
+   GLOBALS
+============================================================ */
+let map, markers = [];
+const warehouseCoord = [55.1707, -118.7947];
+const REPO_OWNER = "Billyschmidt123";
+const REPO_NAME = "Bottle-Water-1";
+const REPO_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
 
-    // === ADDED: Customer Maintenance Data Stores ===
-    let customerMaintList = [];
-    let currentEditCustomerIndex = null;
+let globalProducts = [];
+let globalCustomers = [];
 
-    // === ADDED: Scan progress state for customer maintenance ===
-    let totalRouteFiles = 0;
-    let scannedRouteFiles = 0;
+let customerMaintList = [];
+let customerMaintHeaders = [];
+let currentEditCustomerIndex = null;
 
-    function updateCustomerScanProgress() {
-        const pct = totalRouteFiles === 0 ? 0 : Math.floor((scannedRouteFiles / totalRouteFiles) * 100);
-        const bar = document.querySelector('#customerMaintLoadingOverlay .progress-inner');
-        const label = document.getElementById('customerMaintProgressLabel');
-        if (bar) bar.style.width = pct + "%";
-        if (label) label.innerText = `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
-    }
+let totalRouteFiles = 0;
+let scannedRouteFiles = 0;
 
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+/* ============================================================
+   UTILITIES
+============================================================ */
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    async function initApp() {
-        map = L.map('map').setView(warehouseCoord, 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse").openPopup();
-        await loadDynamicRoutes();
-        await loadProductList();
-    }
+function showCustomerMaintLoading(show) {
+    document.getElementById('customerMaintLoadingOverlay').style.display = show ? 'flex' : 'none';
+}
 
-    async function loadProductList() {
-        const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
-        try {
-            for (const path of productFiles) {
-                const res = await fetch(`${REPO_BASE}/${path}`);
-                const json = await res.json();
-                if (!json || !json.content) {
-                    console.error("Product API error", json);
-                    continue;
-                }
-                const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-                lines.slice(1).forEach(line => {
-                    const p = line.split(',');
-                    globalProducts.push({ name: p[0], size: p[1], price: parseFloat(p[2]) || 0, source: path, active: true });
-                });
-            }
-        } catch (e) { console.error("Product Load Error", e); }
-    }
+function updateCustomerScanProgress() {
+    const pct = totalRouteFiles === 0 ? 0 : Math.floor((scannedRouteFiles / totalRouteFiles) * 100);
+    document.querySelector('#customerMaintLoadingOverlay .progress-inner').style.width = pct + "%";
+    document.getElementById('customerMaintProgressLabel').innerText =
+        `Scanning ${scannedRouteFiles} of ${totalRouteFiles} files (${pct}%)`;
+}
 
-    async function loadDynamicRoutes() {
-        const dropdown = document.getElementById('routeDropdown');
-        try {
-            const res = await fetch(`${REPO_BASE}/routes`);
-            const contents = await res.json();
-            if (!Array.isArray(contents)) {
-                console.error("Route Load API error", contents);
-                dropdown.innerHTML = '<option value="">-- Select Route --</option>';
-                return;
-            }
-            const files = contents.filter(f => f.name.endsWith('.csv'));
-            dropdown.innerHTML = '<option value="">-- Select Route --</option>' + 
-                files.map(f => `<option value="${f.path}">${f.name.replace('.csv', '')}</option>`).join('');
-        } catch (e) { console.error("Route Load Error", e); }
-    }
+/* ============================================================
+   INIT
+============================================================ */
+async function initApp() {
+    map = L.map('map').setView(warehouseCoord, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.marker(warehouseCoord).addTo(map).bindPopup("Warehouse").openPopup();
 
-    async function loadSelectedRoute() {
-        const path = document.getElementById('routeDropdown').value;
-        if (!path) return;
-        markers.forEach(m => map.removeLayer(m));
-        markers = [];
+    await loadDynamicRoutes();
+    await loadProductList();
+}
+
+/* ============================================================
+   PRODUCT LOADING
+============================================================ */
+async function loadProductList() {
+    const productFiles = ["Products/Water.csv", "Products/Coffee.csv"];
+
+    for (const path of productFiles) {
         try {
             const res = await fetch(`${REPO_BASE}/${path}`);
             const json = await res.json();
-            if (!json || !json.content) {
-                console.error("Route CSV API error", json);
-                return;
-            }
+            if (!json || !json.content) continue;
+
             const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
             const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-            
-            // ADDED: Populate globalCustomers from the currently loaded route
-            globalCustomers = lines.slice(1).map(l => {
-                const p = l.split(',');
-                return { company: p[3] || p[0], address: p[4] || p[1], phone: p[2], route: path };
+
+            lines.slice(1).forEach(line => {
+                const p = line.split(',');
+                globalProducts.push({
+                    name: p[0],
+                    size: p[1],
+                    price: parseFloat(p[2]) || 0,
+                    source: path,
+                    active: true
+                });
             });
-
-            renderManifest(globalCustomers);
-        } catch (e) { console.error("CSV Parse Error", e); }
+        } catch (e) { console.error("Product Load Error", e); }
     }
+}
 
-    function renderManifest(stops) {
-        const container = document.getElementById('stopList');
-        container.innerHTML = "";
-        stops.forEach((stop, i) => {
-            const card = document.createElement('div');
-            card.className = 'delivery-card';
-            card.innerHTML = `<strong>${i+1}. ${stop.company}</strong><br><small>${stop.address}</small>`;
-            card.onclick = () => {
-                document.getElementById('activeAddress').innerText = stop.address;
-                document.getElementById('activePhone').innerText = stop.phone;
-                window.currentActiveStop = stop;
-                openStopSlip(stop);
-            };
-            container.appendChild(card);
-        });
-    }
-
-    function openStopSlip(stop) {
-        const preview = document.getElementById('slipPreview');
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        preview.innerHTML = `
-            <div class="culligan-slip">
-                <h2>Culligan</h2>
-                <p><strong>DATE:</strong> ${dateStr}</p>
-                <p><strong>CUSTOMER:</strong> ${stop.company}<br>${stop.address}</p>
-                <table class="c-table">
-                    <thead><tr><th>QTY</th><th>DESCRIPTION</th><th>PRICE</th></tr></thead>
-                    <tbody><tr><td colspan="3">Select products in management to populate.</td></tr></tbody>
-                </table>
-            </div>`;
-        openModal('stopModal');
-    }
-
-    function emailSlip() {
-        const stop = window.currentActiveStop;
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const fileName = `${stop.company} - 100131 - ${dateStr}.pdf`;
-        html2pdf().from(document.getElementById('slipPreview')).save(fileName);
-    }
-
-    function emailSlip() {
-        const stop = window.currentActiveStop;
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const fileName = `${stop.company} - 100131 - ${dateStr}.pdf`;
-        html2pdf().from(document.getElementById('slipPreview')).save(fileName);
-    }
-
-    function openProductMaintenance() {
-        const body = document.getElementById('productMaintBody');
-        body.innerHTML = globalProducts.map(p => `
-            <tr><td>${p.name}</td><td>${p.size}</td><td>$${p.price.toFixed(2)}</td><td>Active</td></tr>
-        `).join('');
-        openModal('productMaintModal');
-    }
-
-    // === ADDED: FIXES – dynamic headers, working edit/new, loading indicator ===
-    let customerMaintHeaders = [];
-
-    function showCustomerMaintLoading(show) {
-        const el = document.getElementById('customerMaintLoadingOverlay');
-        if (!el) return;
-        el.style.display = show ? 'flex' : 'none';
-    }
-
-    function deriveCustomerMaintHeaders() {
-        if (!customerMaintList || customerMaintList.length === 0) return;
-        const first = customerMaintList[0];
-        customerMaintHeaders = Object.keys(first).filter(k => !k.startsWith('__'));
-    }
-
-    function buildCustomerMaintTableHeader() {
-        const theadRow = document.querySelector('#customerMaintModal thead tr');
-        if (!theadRow || !customerMaintHeaders.length) return;
-        let html = "";
-        customerMaintHeaders.forEach(h => {
-            html += `<th>${h}</th>`;
-        });
-        html += `<th>Actions</th>`;
-        theadRow.innerHTML = html;
-    }
-
-   // === REPLACEMENT: Load all route customers AND extract real CSV headers ===
-async function loadAllRouteCustomersForMaintenance() {
-    customerMaintList = [];
-    customerMaintHeaders = [];   // reset
-    let headerSet = new Set();   // collect unique headers
+/* ============================================================
+   ROUTE LOADING
+============================================================ */
+async function loadDynamicRoutes() {
+    const dropdown = document.getElementById('routeDropdown');
 
     try {
         const res = await fetch(`${REPO_BASE}/routes`);
         const contents = await res.json();
 
         if (!Array.isArray(contents)) {
-            console.error("Customer Maint Route API error", contents);
-            totalRouteFiles = 0;
-            scannedRouteFiles = 0;
-            updateCustomerScanProgress();
+            dropdown.innerHTML = '<option value="">-- Select Route --</option>';
             return;
         }
 
         const files = contents.filter(f => f.name.endsWith('.csv'));
-        totalRouteFiles = files.length;
-        scannedRouteFiles = 0;
-        updateCustomerScanProgress();
 
-        for (const file of files) {
-            try {
-                const r = await fetch(`${REPO_BASE}/${file.path}`);
-                const json = await r.json();
+        dropdown.innerHTML =
+            '<option value="">-- Select Route --</option>' +
+            files.map(f => `<option value="${f.path}">${f.name.replace('.csv', '')}</option>`).join('');
 
-                if (!json || !json.content) {
-                    console.error("Customer Maint CSV API error", file.path, json);
-                    scannedRouteFiles++;
-                    updateCustomerScanProgress();
-                    continue;
-                }
-
-                const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-
-                if (lines.length === 0) continue;
-
-                // 1️⃣ Extract REAL CSV headers
-                const rawHeaders = lines[0].split(',').map(h => h.trim());
-                rawHeaders.forEach(h => headerSet.add(h));
-
-                // 2️⃣ Parse rows using real headers
-                lines.slice(1).forEach((line, idx) => {
-                    const cols = line.split(',');
-                    const rec = {};
-
-                    rawHeaders.forEach((h, i) => {
-                        rec[h] = cols[i] || "";
-                    });
-
-                    // internal metadata
-                    rec.__routePath = file.path;
-                    rec.__rowIndex = idx + 1;
-                    rec.__deleted = false;
-
-                    customerMaintList.push(rec);
-                });
-
-            } catch (innerErr) {
-                console.error("Customer Maint CSV load error", file.path, innerErr);
-            }
-
-            scannedRouteFiles++;
-            updateCustomerScanProgress();
-        }
-
-        // 3️⃣ Finalize unified header list
-        customerMaintHeaders = Array.from(headerSet);
-
-    } catch (e) {
-        console.error("Customer Maint master load error", e);
-        totalRouteFiles = 0;
-        scannedRouteFiles = 0;
-        updateCustomerScanProgress();
-    }
+    } catch (e) { console.error("Route Load Error", e); }
 }
 
-            const files = contents.filter(f => f.name.endsWith('.csv'));
-            totalRouteFiles = files.length;
-            scannedRouteFiles = 0;
-            updateCustomerScanProgress();
+async function loadSelectedRoute() {
+    const path = document.getElementById('routeDropdown').value;
+    if (!path) return;
 
-            for (const file of files) {
-                try {
-                    const r = await fetch(`${REPO_BASE}/${file.path}`);
-                    const json = await r.json();
-                    if (!json || !json.content) {
-                        console.error("Customer Maint CSV API error", file.path, json);
-                        scannedRouteFiles++;
-                        updateCustomerScanProgress();
-                        continue;
-                    }
-                    const decoded = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                    const lines = decoded.split(/\n/).filter(l => l.trim() !== '');
-                    lines.slice(1).forEach((line, idx) => {
-                        const p = line.split(',');
-                        const rec = {
-                            "Company/Name": p[3] || p[0] || "",
-                            "Address": p[4] || p[1] || "",
-                            "Phone": p[2] || "",
-                            "Route Assoc.": file.name.replace('.csv', ''),
-                            __routePath: file.path,
-                            __rowIndex: idx + 1,
-                            __deleted: false
-                        };
-                        customerMaintList.push(rec);
-                    });
-                } catch (innerErr) {
-                    console.error("Customer Maint CSV load error", file.path, innerErr);
-                }
-                scannedRouteFiles++;
-                updateCustomerScanProgress();
-            }
-        } catch (e) {
-            console.error("Customer Maint master load error", e);
-            totalRouteFiles = 0;
-            scannedRouteFiles = 0;
-            updateCustomerScanProgress();
-        }
-    }
-
-    // OVERRIDE: openCustomerMaintenance again to include loading + headers
-    function openCustomerMaintenance() {
-        showCustomerMaintLoading(true);
-        loadAllRouteCustomersForMaintenance().then(() => {
-            deriveCustomerMaintHeaders();
-            buildCustomerMaintTableHeader();
-            renderCustomerTable();
-            showCustomerMaintLoading(false);
-            openModal('customerMaintModal');
-        }).catch(() => {
-            showCustomerMaintLoading(false);
-            openModal('customerMaintModal');
-        });
-    }
-
-    // OVERRIDE: renderCustomerTable again to use header-based fields and wire edit/delete
-    function renderCustomerTable() {
-        const body = document.getElementById('customerMaintBody');
-        const searchInput = document.getElementById('custSearch');
-        const search = (searchInput && searchInput.value) ? searchInput.value : "";
-        body.innerHTML = "";
-        if (!customerMaintHeaders.length) {
-            deriveCustomerMaintHeaders();
-        }
-        customerMaintList
-            .map((c, idx) => ({ c, idx }))
-            .filter(({ c }) => !c.__deleted)
-            .filter(({ c }) => {
-                if (!search.trim()) return true;
-                const s = search.toLowerCase();
-                const joined = customerMaintHeaders.map(h => (c[h] || "")).join(" ").toLowerCase();
-                return joined.includes(s);
-            })
-            .forEach(({ c, idx }) => {
-                const row = document.createElement('tr');
-                let cells = "";
-                customerMaintHeaders.forEach(h => {
-                    const val = c[h] !== undefined ? c[h] : "";
-                    const safeVal = String(val).replace(/"/g, '&quot;');
-                    const safeHeader = h.replace(/'/g, "\\'");
-                    cells += `<td><input type="text" class="maint-input" value="${safeVal}" onchange="updateCustomerHeaderField(${idx}, '${safeHeader}', this.value)"></td>`;
-                });
-                row.innerHTML = cells + `
-                    <td style="display:flex; gap:6px;">
-                        <button class="btn-ui" style="background:#6c757d; padding:5px 10px;" onclick="openCustomerEditModal(${idx})"><i class="fas fa-pen"></i></button>
-                        <button class="btn-ui" style="background:#dc3545; padding:5px 10px;" onclick="removeCustomer(${idx})"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                body.appendChild(row);
-            });
-    }
-
-    // ADDED: header-based field updater used by table inputs
-    function updateCustomerHeaderField(idx, header, value) {
-        if (!customerMaintList[idx]) return;
-        customerMaintList[idx][header] = value;
-    }
-
-    // OVERRIDE: addNewCustomerRow again – create blank record using headers and open edit modal
-    function addNewCustomerRow() {
-        if (!customerMaintHeaders.length) {
-            deriveCustomerMaintHeaders();
-        }
-        const obj = {};
-        customerMaintHeaders.forEach(h => {
-            obj[h] = "";
-        });
-        obj.__routePath = "routes/manual-entry.csv";
-        obj.__rowIndex = -1;
-        obj.__deleted = false;
-        obj.__new = true;
-        customerMaintList.unshift(obj);
-        renderCustomerTable();
-        openCustomerEditModal(0);
-    }
-
-    // OVERRIDE: openCustomerEditModal again – use header order to populate modal
-    function openCustomerEditModal(idx) {
-        currentEditCustomerIndex = idx;
-        const cust = customerMaintList[idx];
-        if (!cust) return;
-        if (!customerMaintHeaders.length) {
-            deriveCustomerMaintHeaders();
-        }
-        const container = document.getElementById('customerEditForm');
-        container.innerHTML = "";
-        customerMaintHeaders.forEach(h => {
-            const val = cust[h] !== undefined ? cust[h] : "";
-            const safeVal = String(val).replace(/"/g, '&quot;');
-            const row = document.createElement('div');
-            row.className = 'edit-field-row';
-            row.innerHTML = `
-                <label>${h}</label>
-                <input type="text" data-field="${h}" value="${safeVal}">
-            `;
-            container.appendChild(row);
-        });
-        openModal('customerEditModal');
-    }
-
-    // NOTE: saveCustomerDatabase, saveCustomerEditModal, removeCustomer, startRoute, runEndOfDay
-    // are assumed to exist elsewhere in your original file or to be added later.
-
-    document.addEventListener('DOMContentLoaded', initApp);
-</script>
-
-<!-- === ADDED: Ensure modal functions remain globally accessible === -->
-<script>
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-</script>
-
-</body>
-</html>
+    markers
